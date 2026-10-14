@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>赤平极射投影法 · 交互式教学演示工具</title>
+<style>
+  :root{
+    --bg:#f2f6fb; --panel:#ffffff; --line:#d7e0ea; --ink:#16212e; --mut:#5c6b7d;
+    --accent:#2563eb; --plane:#d92d20; --pole:#e08a00; --fric:#7c3aed;
+    --eq:#0e7490; --net:#a8b9c9; --ok:#067647; --warn:#b54708; --bad:#b42318;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.65}
+  header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#ffffff,#f7fafd);
+         border-bottom:1px solid var(--line);padding:12px 20px 0}
+  h1{margin:0;font-size:18px;letter-spacing:.5px}
+  h1 small{font-weight:400;color:var(--mut);font-size:12.5px;margin-left:8px;letter-spacing:0}
+  .tabs{display:flex;gap:6px;margin-top:10px}
+  .tab{padding:7px 16px;border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;
+       background:#eef3f9;color:var(--mut);cursor:pointer;font-size:13.5px;user-select:none}
+  .tab.on{background:#fff;color:var(--accent);font-weight:600;box-shadow:0 -2px 0 var(--accent) inset}
+  main{padding:16px 20px 40px;max-width:1560px;margin:0 auto}
+  .view{display:none}.view.on{display:block}
+  .grid2{display:grid;grid-template-columns:1.05fr 1fr;gap:14px;align-items:start}
+  .grid2b{display:grid;grid-template-columns:1.35fr 1fr;gap:14px;align-items:start}
+  @media (max-width:1080px){.grid2,.grid2b{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+        box-shadow:0 1px 3px rgba(20,40,70,.05)}
+  .card h2{margin:0 0 8px;font-size:14px;color:var(--mut);font-weight:600;letter-spacing:.5px}
+  .card h2 b{color:var(--ink);font-size:15px}
+  canvas{width:100%;display:block;aspect-ratio:1/0.86;border-radius:10px;background:#fbfdff;border:1px solid var(--line);cursor:grab}
+  #c3d{aspect-ratio:1/0.80}
+  canvas:active{cursor:grabbing}
+  .ctl{margin-top:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px}
+  .ctl .row{display:grid;grid-template-columns:86px 1fr 58px;align-items:center;gap:8px}
+  #v2 .ctl .row{grid-template-columns:118px 1fr 56px}
+  .ctl .row label{color:var(--mut);font-size:13px}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  input[type=number]{width:100%;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font:inherit;text-align:right}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{border:1px solid var(--line);background:#f7fafd;border-radius:999px;padding:4px 12px;font-size:12.5px;
+        cursor:pointer;color:var(--mut);user-select:none}
+  .chip.on{background:#e8f0ff;border-color:#9cc0ff;color:var(--accent);font-weight:600}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 14px;font:inherit;cursor:pointer}
+  .btn:hover{background:#f2f7ff;border-color:#9cc0ff}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{background:#1d4ed8}
+  .readout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px;margin-top:10px;font-size:13px}
+  .readout div{display:flex;justify-content:space-between;border-bottom:1px dashed #e6edf5;padding:2px 0}
+  .readout div:nth-child(odd){border-right:1px dashed #e9eff6;padding-right:16px;margin-right:8px}
+  .readout span:first-child{color:var(--mut)}
+  .readout span:last-child{font-family:Consolas,"Courier New",monospace;font-weight:600}
+  .note{background:#f7fafd;border-left:3px solid var(--accent);padding:8px 12px;border-radius:6px;
+        color:#33465c;font-size:13px;margin-top:10px}
+  .res{margin-top:10px}
+  .res .item{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-radius:8px;margin-bottom:6px;
+             border:1px solid var(--line);background:#fbfdff}
+  .res .item.hit{background:#fff5f4;border-color:#f5b5ae}
+  .res .item.miss{background:#f6faf8;border-color:#cfe8dd}
+  .res .item b{display:block;font-size:13.5px}
+  .res .item p{margin:2px 0 0;color:var(--mut);font-size:12.5px}
+  .tag{font-size:11.5px;padding:2px 8px;border-radius:999px;white-space:nowrap;font-weight:700}
+  .tag.hit{background:#fee4e2;color:#b42318}
+  .tag.miss{background:#d9f2e6;color:#067647}
+  .big{font-size:15px;font-weight:700;padding:10px 14px;border-radius:10px;margin-top:10px}
+  .big.bad{background:#fff1f0;border:1px solid #f5b5ae;color:#b42318}
+  .big.ok{background:#f2fbf7;border:1px solid #bfe3d3;color:#067647}
+  .big.mid{background:#fffaeb;border:1px solid #fedf89;color:#b54708}
+  table.k{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px}
+  table.k th,table.k td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+  table.k th{background:#f4f8fd;color:var(--mut);font-weight:600}
+  code{font-family:Consolas,"Courier New",monospace;background:#eef3f9;padding:1px 5px;border-radius:4px;font-size:12.5px}
+  .fm{background:#fbfdff;border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;
+      font-family:Consolas,"Courier New",monospace;font-size:13px;color:#1b3a5c;overflow-x:auto}
+  h3{font-size:14.5px;margin:18px 0 6px;color:#1b3a5c}
+  ul{margin:6px 0 6px 20px;padding:0}
+  li{margin:3px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>赤平极射投影法 · 交互式教学演示工具<small>边坡与支护工程 / 岩体结构面产状 ⇄ 赤平面投影图</small></h1>
+  <div class="tabs">
+    <div class="tab on" data-v="v1">① 投影原理（3D → 平面图）</div>
+    <div class="tab" data-v="v2">② 边坡稳定性赤平投影判别</div>
+    <div class="tab" data-v="v3">③ 原理、公式与读数口诀</div>
+  </div>
+</header>
+
+<main>
+<!-- ================= 视图1：投影原理 ================= -->
+<section id="v1" class="view on">
+  <div class="grid2">
+    <div class="card">
+      <h2><b>三维投影球与极射光路</b>（按住拖动可旋转观察，滚轮缩放）</h2>
+      <canvas id="c3d"></canvas>
+    </div>
+    <div class="card">
+      <h2><b>赤平投影图</b>（吴氏网 / 基圆内的大圆与极点）</h2>
+      <canvas id="c2d"></canvas>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h2>产状输入与投影约定</h2>
+      <div class="ctl">
+        <div class="row"><label>倾向 α</label><input type="range" id="s_az" min="0" max="359" step="1"><input type="number" id="n_az" min="0" max="359"></div>
+        <div class="row"><label>倾角 β</label><input type="range" id="s_dip" min="0" max="90" step="1"><input type="number" id="n_dip" min="0" max="90"></div>
+      </div>
+      <div class="chips" id="hemi">
+        <div class="chip on" data-k="lower">下半球投影（由上极点发射）</div>
+        <div class="chip" data-k="upper">上半球投影（由下极点发射）</div>
+      </div>
+      <div class="chips" id="mode">
+        <div class="chip on" data-k="angle">等角投影（吴氏网）</div>
+        <div class="chip" data-k="area">等面积投影（施氏网）</div>
+      </div>
+      <div class="chips" id="toggles">
+        <div class="chip on" data-k="gc">大圆（球面交线）</div>
+        <div class="chip on" data-k="rays">极射线</div>
+        <div class="chip on" data-k="pole">极点（法线）</div>
+        <div class="chip on" data-k="dip">走向线/倾斜线</div>
+        <div class="chip on" data-k="grid">球面网格</div>
+      </div>
+      <div class="chips" style="margin-top:12px">
+        <button class="btn primary" id="play">▶ 播放"逐点投射"动画</button>
+        <button class="btn" data-step="0">① 球面交线</button>
+        <button class="btn" data-step="1">② 连线到发射点</button>
+        <button class="btn" data-step="2">③ 交点落在赤平面上</button>
+        <button class="btn" data-step="3">④ 交点连成大圆</button>
+      </div>
+      <div class="chips" style="margin-top:10px">
+        <span style="color:var(--mut);font-size:12.5px;align-self:center">典型产状：</span>
+        <div class="chip" data-preset="120,45">120°∠45°</div>
+        <div class="chip" data-preset="0,30">0°∠30°（正北缓倾）</div>
+        <div class="chip" data-preset="200,60">200°∠60°（边坡面）</div>
+        <div class="chip" data-preset="90,90">90°∠90°（直立面）</div>
+        <div class="chip" data-preset="30,10">30°∠10°（近水平面）</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>图面读数</h2>
+      <div class="readout" id="ro"></div>
+      <div class="note" id="explain"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 视图2：边坡判别 ================= -->
+<section id="v2" class="view">
+  <div class="grid2b">
+    <div class="card">
+      <h2><b>边坡赤平投影图</b>（Markland 运动学判据：摩擦圆 + 出露区）</h2>
+      <canvas id="cs2d"></canvas>
+      <div class="note">图中：<b style="color:#d92d20">粗红弧</b>=坡面(cs)、<b style="color:#2563eb">蓝弧</b>=结构面 J1、<b style="color:#7c3aed">紫弧</b>=结构面 J2、
+      <b style="color:#0e7490">青弧</b>=坡顶面(ns，天然坡面)、<b style="color:#e08a00">●</b>=极点、<b style="color:#111">◆</b>=两组结构面交棱线 M。<br>
+      <b>判别区以摩擦圆为分界线</b>：<b style="color:#7c3aed">紫色圆</b>=摩擦圆（半径 r/R = tan(45°−φ/2)，圆内=伏角&gt;φ）；
+      <b style="color:#f59e0b">橙色区（圆内、坡向±20°）</b>=滑动出露区，判读对象是<b>大圆弧顶</b>——弧顶落入即满足 φ&lt;倾角&lt;坡角；
+      <b style="color:#be185d">粉色区（圆外、坡向±20°）</b>=倾倒区，判读对象是<b>极点</b>——极点落入即结构面陡立且倾向坡内。</div>
+    </div>
+    <div class="card">
+      <h2>输入参数</h2>
+      <div class="ctl" style="grid-template-columns:1fr">
+        <div class="row"><label>坡面 cs 倾向</label><input type="range" id="a_cs" min="0" max="359"><input type="number" id="q_cs"></div>
+        <div class="row"><label>坡面 cs 倾角</label><input type="range" id="a_csd" min="0" max="90"><input type="number" id="q_csd"></div>
+        <div class="row"><label>坡顶面 ns 倾向</label><input type="range" id="a_ns" min="0" max="359"><input type="number" id="q_ns"></div>
+        <div class="row"><label>坡顶面 ns 倾角</label><input type="range" id="a_nsd" min="0" max="90"><input type="number" id="q_nsd"></div>
+        <div class="row"><label>结构面 J1 倾向</label><input type="range" id="a_1" min="0" max="359"><input type="number" id="q_1"></div>
+        <div class="row"><label>结构面 J1 倾角</label><input type="range" id="a_1d" min="0" max="90"><input type="number" id="q_1d"></div>
+        <div class="row"><label>结构面 J2 倾向</label><input type="range" id="a_2" min="0" max="359"><input type="number" id="q_2"></div>
+        <div class="row"><label>结构面 J2 倾角</label><input type="range" id="a_2d" min="0" max="90"><input type="number" id="q_2d"></div>
+        <div class="row"><label>摩擦角 φ</label><input type="range" id="a_phi" min="0" max="60"><input type="number" id="q_phi"></div>
+      </div>
+      <div class="chips" style="margin-top:10px">
+        <span style="color:var(--mut);font-size:12.5px;align-self:center">算例：</span>
+        <div class="chip" data-case="plane">平面滑动</div>
+        <div class="chip" data-case="wedge">楔形体滑动</div>
+        <div class="chip" data-case="topple">倾倒破坏</div>
+        <div class="chip" data-case="stable">整体稳定</div>
+      </div>
+      <h2 style="margin-top:16px">判别结果</h2>
+      <div id="judge"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 视图3：原理 ================= -->
+<section id="v3" class="view">
+  <div class="grid2">
+    <div class="card">
+      <h2><b>一、为什么需要赤平投影</b></h2>
+      <p>岩体中的结构面（层面、节理、断层、片理）在空间中是任意倾斜的平面。要在工程图上比较"坡面、结构面、坡顶面"三者的空间关系，
+      直接看图很不方便。赤平极射投影把三维的<b>点、线、面</b>压到一个圆里：<b>面的倾角变成半径、面的倾向变成方位、面的相交关系变成点与圆弧的关系</b>，
+      于是"能不能滑出去"这类问题变成"读图"。</p>
+
+      <h3>三个要素</h3>
+      <ul>
+        <li><b>投影球</b>：以结构面上某点为球心、任意半径的球。结构面过球心，与球面相交出的是一个<b>大圆</b>。</li>
+        <li><b>赤平面（赤道平面）</b>：过球心的水平面，也就是最终的<b>画图平面</b>。</li>
+        <li><b>极射点（发射点）</b>：球的上（或下）极点。从极射点向球面上的点连线，射线与赤平面的交点即为该点的投影。</li>
+      </ul>
+      <div class="fm">Q = N + u·(P − N)，令 Q<sub>z</sub> = 0  ⟹  u = R / (R − P<sub>z</sub>)
+投影点坐标：x' = R·x/(R − z)，y' = R·y/(R − z)</div>
+      <p>把 |P|=R 的单位球面点写成"自竖直向下方向的夹角 θ"（θ = 90° − 伏角），代入即得最常用的投影半径公式：</p>
+      <div class="fm">等角投影（吴氏网）：r = R · tan(θ/2)
+等面积投影（施氏网）：r = R · √2 · sin(θ/2)</div>
+
+      <h3>二、两种半球约定的差别（课堂上必须讲清楚）</h3>
+      <table class="k">
+        <tr><th>约定</th><th>发射点（极射点）</th><th>被投影的半球</th><th>投影半径</th><th>大圆凸向</th><th>极点方位</th></tr>
+        <tr><td><b>下半球投影</b></td><td>球的上极点</td><td>下半球</td><td>r = R·tan(θ/2)，θ 自竖直向下量</td><td>凸向<b>倾向 α</b></td><td>α + 180°</td></tr>
+        <tr><td><b>上半球投影</b></td><td>球的下极点</td><td>上半球</td><td>同上（自竖直向上量）</td><td>凸向<b>α + 180°</b></td><td>α</td></tr>
+      </table>
+      <p>可以看出：两种约定得到的图，<b>半径数值完全相同，只是整体旋转了 180°</b>。所以"同一个面，用哪种约定画"只影响方位朝向，不影响角距关系。
+      国内部分工程地质教材习惯用上半球投影，国际岩石力学（ISRM）、Hoek &amp; Bray 的边坡图解法以及工程判稳使用的吴氏网多用下半球等角投影。
+      <b>用工具里的切换键现场演示一遍，学生就明白二者不是两套理论，只是视角相反。</b></p>
+    </div>
+
+    <div class="card">
+      <h2><b>三、三个关键量的公式（可直接板书）</b></h2>
+      <p>设结构面倾向 α、倾角 β，R 为基圆半径：</p>
+      <table class="k">
+        <tr><th>几何量</th><th>投影半径</th><th>方位</th><th>说明</th></tr>
+        <tr><td>走向点（两个）</td><td>R</td><td>α ± 90°</td><td>落在大圆与基圆的两个交点上，是"大圆弧的两端"</td></tr>
+        <tr><td>倾斜线（最陡）投影点</td><td>R·tan(45° − β/2)</td><td>α</td><td>大圆弧上离圆心最近的点，弧顶</td></tr>
+        <tr><td>极点（法线）</td><td>R·tan(β/2)</td><td>α + 180°</td><td>与弧顶恰好相差 90° 角距，最容易画错的地方</td></tr>
+      </table>
+      <div class="note"><b>读数口诀：</b>弧端方位 = 走向；弧顶方位 = 倾向；<b>弧顶到圆心的径向距离越大 → 倾角越缓</b>（β=0° 时大圆与基圆重合；
+      β=90° 时大圆退化为过圆心的直径）。极点则相反：<b>基点越靠圆心 → 面越陡</b>（β=90° 的直立面，其极点落在基圆上）。</div>
+
+      <h3>四、边坡判稳的判据（工具第②页会自动判定）</h3>
+      <table class="k">
+        <tr><th>破坏模式</th><th>几何判据</th></tr>
+        <tr><td>平面滑动</td><td>结构面倾向与坡向之差 ≤ 20°；且倾角 &gt; 摩擦角 φ；且倾角 &lt; 坡角（能在坡面出露）</td></tr>
+        <tr><td>楔形体滑动</td><td>两组结构面交棱线 M 的倾伏向与坡向之差 ≤ 20°；倾伏角 &gt; φ；倾伏角 &lt; 坡角</td></tr>
+        <tr><td>倾倒破坏</td><td><b>结构面倾向与坡向相反</b>（倾向 ≈ 坡向 + 180° ± 20°，即倾向坡内、走向与坡面近平行）；
+            结构面陡立（极点落入摩擦圆外圈：极点伏角 = 90° − 倾角 ≤ φ）；且坡角 ≥ 30°</td></tr>
+      </table>
+      <div class="note"><b>判别区怎么读——摩擦圆就是分界线：</b>把摩擦圆（半径 <code>r/R = tan(45°−φ/2)</code>）画出来，
+      <b>圆内靠坡向一侧</b>是<b>滑动出露区</b>，判读对象是<b>大圆弧顶</b>（弧顶落入即 φ &lt; 倾角 &lt; 坡角，能在坡面剪出）；
+      <b>圆外靠基圆一侧</b>是<b>倾倒区</b>，判读对象是<b>极点</b>（极点落入即结构面陡立且倾向坡内）。
+      两个区看着像"月牙 + 扇形"，合起来正好铺满坡向 ±20° 的整条径向带。<b>注意判读对象不同：一个是弧、一个是点</b>，
+      这是初学者最容易混淆的地方。</div>
+      <div class="note"><b>倾倒判据最容易讲错的一点：</b>倾倒要求结构面"<b>倾向坡内</b>"（倾向与坡向相反），走向与坡面走向近乎平行——坡体像一叠斜插在山里的书，
+      被坡面切脚后向外倾覆。所以<b>它的方位条件与平面滑动正好相反</b>（平面滑动要求倾向与坡向一致）。
+      伏角条件各文献取值略有差别：《路基工程》类程序与香港《岩土工程手册》标准图取<b>极点伏角 ≤ φ</b>（摩擦圆为界）；
+      部分教材取简化的<b>极点伏角 ≤ 30°</b>；Goodman &amp; Bray 原式为 <code>90° − 结构面倾角 ≤ 坡角 − φ</code>。工具把三者都列出来校核。</div>
+      <div class="note"><b>还要提醒学生：</b>"极点方位"的数值随半球约定而变。<b>下半球约定</b>下极点方位 = 倾向 + 180°；
+      <b>上半球约定</b>下极点方位 = 倾向。因此文献里写"极点落在反坡向"还是"落在坡向"，必须先看它用的是哪种约定——
+      用本工具第①页切换一次半球，方位数字立刻互换，这个"读文献的坑"当场就讲明白了。</div>
+      <p style="color:var(--mut)">注：这些都是<b>运动学（几何）判据</b>，只回答"滑不滑得动、露不露得出"，不给出安全系数。工程结论仍需极限平衡或数值计算。
+      这正是赤平投影"只做初步判别"的原因，也是课堂上要反复强调的边界。</p>
+
+      <h3>五、工具怎么用</h3>
+      <ul>
+        <li>第①页：拖"倾向/倾角"滑块，观察 3D 球面上大圆如何随之转动、极射线如何打在赤平面上、平面图上大圆弧如何随之伸缩。</li>
+        <li>点"播放逐点投射动画"：球面上每一点沿极射线落到赤平面，逐点连成圆弧，直观回答"平面投影图是怎么得到的"。</li>
+        <li>点①②③④分步按钮：一步一步搭出投影图，适合在课堂上边讲边点。</li>
+        <li>切换"半上半球约定"和"吴氏网/施氏网"：讲清约定差异与两类投影网的区别。</li>
+        <li>第②页：输入坡面、坡顶面、两组结构面产状和摩擦角，自动给出三种破坏模式的判据校核与出露情况。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+/* =========================================================================
+   赤平极射投影 教学演示工具
+   坐标系：x = 东(E)，y = 北(N)，z = 上(Up)，全部用单位球（R = 1）
+   ========================================================================= */
+/* =================== CORE MATH START （此段为纯数学，已被校验脚本抽取消验） =================== */
+const DEG = Math.PI/180, RAD = 180/Math.PI;
+function vsub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+function vcross(a,b){return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];}
+function vdot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function vlen(a){return Math.hypot(a[0],a[1],a[2]);}
+function vnorm(a){const n=vlen(a)||1;return [a[0]/n,a[1]/n,a[2]/n];}
+function vscale(a,k){return [a[0]*k,a[1]*k,a[2]*k];}
+
+/* 由产状（倾向 dipAz、倾角 dip）求平面三要素
+   strike: 走向方向（水平）；down: 倾向线（指向下方、倾角 dip）
+   nUp/nDown: 上/下半球法线（即极点的两个方向） */
+function planeFrame(dipAz, dip){
+  const a = dipAz*DEG, b = dip*DEG;
+  const strike = [Math.cos(a), -Math.sin(a), 0];
+  const down   = [Math.cos(b)*Math.sin(a), Math.cos(b)*Math.cos(a), -Math.sin(b)];
+  const nUp    = [Math.sin(b)*Math.sin(a), Math.sin(b)*Math.cos(a), Math.cos(b)];
+  return { strike, down, nUp, nDown: nUp.map(v=>-v) };
+}
+
+/* 过球心大圆的采样点（t 从 0 到 2π）：g(t)=cos t·走向 + sin t·倾向线
+   t∈[0,π] 落在下半球，t∈[π,2π] 落在上半球 */
+function greatCircle(dipAz, dip, n){
+  n = n || 241;
+  const f = planeFrame(dipAz, dip), out = [];
+  for(let i=0;i<=n;i++){
+    const t = 2*Math.PI*i/n;
+    out.push([ f.strike[0]*Math.cos(t) + f.down[0]*Math.sin(t),
+               f.strike[1]*Math.cos(t) + f.down[1]*Math.sin(t),
+               f.strike[2]*Math.cos(t) + f.down[2]*Math.sin(t) ]);
+  }
+  return out;
+}
+
+/* 极射赤平投影：把单位球面点 P 投到赤平面上
+   hemi: 'lower' 下半球投影 | 'upper' 上半球投影
+   mode: 'angle' 等角(吴氏网) | 'area' 等面积(施氏网)
+   返回 {E,N,r}：E 向东为正，N 向北为正，r 为投影半径（R=1） */
+function stereo(P, hemi, mode){
+  const axis = (hemi === 'upper') ? 1 : -1;          // 该约定下"落到圆心"的方向
+  let v = P;
+  if (v[2]*axis < 0) v = [-v[0], -v[1], -v[2]];      // 不在该半球时取对跖点
+  const cosT = Math.max(-1, Math.min(1, v[2]*axis)); // 与轴的夹角余弦
+  const th = Math.acos(cosT);                        // θ ∈ [0, π/2]
+  const r  = (mode === 'area') ? Math.SQRT2*Math.sin(th/2) : Math.tan(th/2);
+  const m  = Math.hypot(v[0], v[1]);
+  const ex = m < 1e-12 ? 0 : v[0]/m, ey = m < 1e-12 ? 0 : v[1]/m;
+  return { E: ex*r, N: ey*r, r: r };
+}
+
+/* 一条空间直线（方向 L）的下半球产状：倾伏角 plunge、倾伏向 plungeAz */
+function lineAttitude(L){
+  let v = L;
+  if (v[2] > 0) v = [-v[0], -v[1], -v[2]];           // 取下半球那一端
+  const plunge = Math.asin(Math.max(-1,Math.min(1,-v[2])))*RAD;
+  let az = Math.atan2(v[0], v[1])*RAD; if (az < 0) az += 360;
+  return { plunge, azimuth: az };
+}
+
+/* 两个平面的交棱线方向（单位向量） */
+function intersectionLine(dipAz1, dip1, dipAz2, dip2){
+  const n1 = planeFrame(dipAz1, dip1).nUp, n2 = planeFrame(dipAz2, dip2).nUp;
+  return vnorm(vcross(n1, n2));
+}
+
+/* 走向/倾向/极点等关键点（用于绘图与读数） */
+function keyPoints(dipAz, dip, hemi, mode){
+  const f = planeFrame(dipAz, dip);
+  const gc = greatCircle(dipAz, dip, 241);
+  const half = gc.filter(p => hemi === 'upper' ? p[2] >= -1e-9 : p[2] <= 1e-9);
+  return {
+    frame: f,
+    gcAll: gc,
+    gcHalf: half,
+    strikePts: [ stereo(f.strike, hemi, mode), stereo(vscale(f.strike,-1), hemi, mode) ],
+    dipPt:     stereo(f.down,   hemi, mode),   // 倾斜线（弧顶）
+    polePt:    stereo(hemi === 'upper' ? f.nUp : f.nDown, hemi, mode)
+  };
+}
+/* =================== CORE MATH END =================== */
+
+/* ---------------- 绘图小工具 ---------------- */
+function fitCanvas(cv){
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){
+    cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return { ctx, w, h };
+}
+const TAU = Math.PI*2;
+function rad(d){ return d*DEG; }
+function arrowHead(ctx, x, y, ang, s, color){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(ang); ctx.fillStyle = color;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-s, s*0.42); ctx.lineTo(-s, -s*0.42); ctx.closePath(); ctx.fill(); ctx.restore();
+}
+const fmt = (v,d=2)=> (Math.abs(v)<1e-9?0:v).toFixed(d);
+
+/* =======================================================================
+   第一部分：三维视图
+   ======================================================================= */
+const cam3 = { yaw:-42, pitch:20, dist:6.2 };
+const S1 = { az:120, dip:45, hemi:'lower', mode:'angle', anim:1, playing:false,
+             show:{ gc:true, rays:true, pole:true, dip:true, grid:true } };
+
+function camBasis(){
+  const ya = cam3.yaw*DEG, pi = Math.max(-80,Math.min(80,cam3.pitch))*DEG, d = cam3.dist;
+  const eye = [ d*Math.cos(pi)*Math.cos(ya), d*Math.cos(pi)*Math.sin(ya), d*Math.sin(pi) ];
+  const f = vnorm(vscale(eye,-1));
+  let r = vcross(f, [0,0,1]);
+  if (vlen(r) < 1e-6) r = [1,0,0];
+  r = vnorm(r);
+  const u = vnorm(vcross(r, f));
+  return { eye, f, r, u, d };
+}
+function makeProj(cv){
+  const { ctx, w, h } = fitCanvas(cv);
+  const { eye, f, r, u, d } = camBasis();
+  const F = cam3.dist * 0.40 * Math.min(w,h);
+  const cx = w/2, cy = h/2 + h*0.03;
+  const P = (p)=>{                                   // 世界点 -> 屏幕点 + 深度
+    const dx = p[0]-eye[0], dy = p[1]-eye[1], dz = p[2]-eye[2];
+    const X = dx*r[0]+dy*r[1]+dz*r[2];
+    const Y = dx*u[0]+dy*u[1]+dz*u[2];
+    const Z = dx*f[0]+dy*f[1]+dz*f[2];
+    const s = F/Math.max(Z,0.15);
+    return { x: cx + s*X, y: cy - s*Y, z: Z };
+  };
+  return { ctx, w, h, P, eye };
+}
+/* 深度 → 透明度系数（近处更实） */
+function shade(z){ const t = (z - (cam3.dist-1.2))/2.4; return Math.max(0.16, Math.min(1, 1.05 - 0.75*t)); }
+
+function draw3D(){
+  const cv = document.getElementById('c3d');
+  if (!cv.clientHeight) return;
+  const { ctx, w, h, P } = makeProj(cv);
+  ctx.clearRect(0,0,w,h);
+  const items = [];
+  const push = (depth, fn)=> items.push({ depth, fn });
+
+  /* --- 球体底色 --- */
+  push(1e6, ()=>{
+    const g = ctx.createRadialGradient(w*0.40, h*0.36, 10, w*0.45, h*0.45, Math.min(w,h)*0.62);
+    g.addColorStop(0,'rgba(226,238,252,0.95)');
+    g.addColorStop(0.75,'rgba(206,224,244,0.75)');
+    g.addColorStop(1,'rgba(196,216,238,0.55)');
+    const sc = P([0,0,0]);
+    const rr = Math.hypot(P([1,0,0]).x - sc.x, P([1,0,0]).y - sc.y);
+    ctx.beginPath(); ctx.arc(sc.x, sc.y, rr, 0, TAU); ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = 'rgba(120,150,185,0.75)'; ctx.lineWidth = 1.4; ctx.stroke();
+  });
+
+  /* --- 球面网格（经线 + 纬线） --- */
+  if (S1.show.grid){
+    const lineCol = 'rgba(120,155,190,0.60)';
+    const mk = (pts)=>{
+      let prev = P(pts[0]);
+      for (let i=1;i<pts.length;i++){
+        const cur = P(pts[i]);
+        const z = (prev.z+cur.z)/2;
+        const a = shade(z)*0.75;
+        if (a > 0.05){
+          push(z, ()=>{ ctx.strokeStyle = lineCol; ctx.globalAlpha = a; ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(cur.x,cur.y); ctx.stroke(); ctx.globalAlpha = 1; });
+        }
+        prev = cur;
+      }
+    };
+    for (let lon=0; lon<180; lon+=45){                    // 经线（过两极的大圆）
+      const pts=[];
+      for (let i=0;i<=36;i++){ const t=TAU*i/36; pts.push([Math.sin(t)*Math.cos(rad(lon)), Math.sin(t)*Math.sin(rad(lon)), Math.cos(t)]); }
+      mk(pts);
+    }
+    for (let lat=-45; lat<=45; lat+=45){                  // 纬线
+      const pts=[], zc=Math.sin(rad(lat)), rc=Math.cos(rad(lat));
+      for (let i=0;i<=48;i++){ const t=TAU*i/48; pts.push([rc*Math.cos(t), rc*Math.sin(t), zc]); }
+      mk(pts);
+    }
+  }
+
+  /* --- 赤平面（赤道面）圆盘，切成 12 个扇区便于深度排序 --- */
+  const NSEG = 12;
+  for (let k=0;k<NSEG;k++){
+    const t0 = TAU*k/NSEG, t1 = TAU*(k+1)/NSEG;
+    const a = P([Math.cos(t0),Math.sin(t0),0]), b = P([Math.cos(t1),Math.sin(t1),0]), c = P([0,0,0]);
+    push((a.z+b.z)/2, ()=>{
+      ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.closePath();
+      ctx.fillStyle = 'rgba(14,116,144,0.13)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(14,116,144,0.30)'; ctx.lineWidth = 1; ctx.stroke();
+    });
+  }
+
+  /* --- 结构面圆盘（过球心、半径 R 的圆盘） --- */
+  const f0 = planeFrame(S1.az, S1.dip);
+  const disk = (t)=>[ f0.strike[0]*Math.cos(t)+f0.down[0]*Math.sin(t),
+                      f0.strike[1]*Math.cos(t)+f0.down[1]*Math.sin(t),
+                      f0.strike[2]*Math.cos(t)+f0.down[2]*Math.sin(t) ];
+  for (let k=0;k<NSEG;k++){
+    const t0 = TAU*k/NSEG, t1 = TAU*(k+1)/NSEG;
+    const a = P(disk(t0)), b = P(disk(t1)), c = P([0,0,0]);
+    push((a.z+b.z)/2, ()=>{
+      ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.closePath();
+      ctx.fillStyle = 'rgba(217,45,32,0.15)'; ctx.fill();
+    });
+  }
+  /* --- 大圆（球面上的交线） --- */
+  if (S1.show.gc){
+    const pts = greatCircle(S1.az, S1.dip, 120).map(P);
+    for (let i=0;i<pts.length-1;i++){
+      const a=pts[i], b=pts[i+1], z=(a.z+b.z)/2;
+      push(z-0.02, ()=>{ ctx.strokeStyle='#c81e14'; ctx.lineWidth=2.6; ctx.globalAlpha=shade(z);
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); ctx.globalAlpha=1; });
+    }
+  }
+
+  /* --- 走向线 / 倾斜线 --- */
+  if (S1.show.dip){
+    const seg = (A,B,col,wd,dash)=>{
+      const a=P(A), b=P(B), z=(a.z+b.z)/2;
+      push(z-0.01, ()=>{ ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=wd; ctx.globalAlpha=shade(z);
+        if(dash) ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); ctx.restore(); });
+    };
+    seg(vscale(f0.strike,-1), f0.strike, '#0f766e', 2.4, [7,5]);      // 走向线
+    seg(vscale(f0.down,-1),   f0.down,   '#b45309', 2.8, null);       // 倾斜线（倾向线）
+  }
+
+  /* --- 极点（法线） --- */
+  if (S1.show.pole){
+    const pv = (S1.hemi==='upper') ? f0.nUp : f0.nDown;
+    const a=P([0,0,0]), b=P(pv), z=(a.z+b.z)/2;
+    push(z-0.01, ()=>{ ctx.strokeStyle='#c2740a'; ctx.lineWidth=2.2; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(b.x,b.y,5,0,TAU); ctx.fillStyle='#e08a00'; ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); });
+  }
+
+  /* --- 极射线与投影点 --- */
+  const emitter = (S1.hemi==='upper') ? [0,0,-1] : [0,0,1];
+  const eS = P(emitter);
+  push(eS.z-0.03, ()=>{ ctx.beginPath(); ctx.arc(eS.x,eS.y,7,0,TAU); ctx.fillStyle='#111827'; ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='#111827'; ctx.font='600 13px sans-serif'; ctx.textAlign='left';
+      ctx.fillText('极射点', eS.x+11, eS.y+4); ctx.textAlign='start'; });
+
+  const nRays = 12;
+  const nShow = Math.max(0, Math.round(S1.anim * nRays));
+  if (S1.show.rays){
+    for (let i=0;i<nShow;i++){
+      /* 下半球约定取大圆的下半段 (t∈[0,π])，上半球约定取上半段 (t∈[π,2π]) */
+      const t0 = (S1.hemi === 'upper') ? Math.PI : 0;
+      const t  = t0 + Math.PI * i/(nRays-1);
+      const pt = [ f0.strike[0]*Math.cos(t)+f0.down[0]*Math.sin(t),
+                   f0.strike[1]*Math.cos(t)+f0.down[1]*Math.sin(t),
+                   f0.strike[2]*Math.cos(t)+f0.down[2]*Math.sin(t) ];
+      /* 射线由发射点穿过球面点，延伸到赤平面上的交点 Q */
+      const u = 1/(1 - emissSign()*pt[2]);         // R=1
+      const Q = [ emitter[0] + u*(pt[0]-emitter[0]),
+                  emitter[1] + u*(pt[1]-emitter[1]),
+                  emitter[2] + u*(pt[2]-emitter[2]) ];
+      const sA=P(emitter), sB=P(pt), sQ=P([Q[0],Q[1],0]);
+      const z = (sA.z+sB.z+sQ.z)/3;
+      push(z-0.04, ()=>{
+        ctx.save();
+        ctx.strokeStyle='rgba(37,99,235,0.30)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.moveTo(sA.x,sA.y); ctx.lineTo(sQ.x,sQ.y); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.strokeStyle='rgba(217,45,32,0.38)'; ctx.lineWidth=1.1;   // 球面点到赤平面这一段
+        ctx.beginPath(); ctx.moveTo(sB.x,sB.y); ctx.lineTo(sQ.x,sQ.y); ctx.stroke();
+        ctx.restore();
+      });
+      /* 赤平面上的投影点 */
+      push(z+0.001, ()=>{ ctx.beginPath(); ctx.arc(sQ.x,sQ.y,3.1,0,TAU); ctx.fillStyle='#1d4ed8'; ctx.fill(); });
+    }
+  }
+  /* --- 已完成的投影弧（连成线） --- */
+  if (S1.anim > 0.02){
+    const pts=[];
+    const t0 = (S1.hemi === 'upper') ? Math.PI : 0;
+    const NMAX = 120;
+    for (let i=0;i<=Math.round(NMAX*S1.anim);i++){
+      const t = t0 + Math.PI*i/NMAX;
+      const P3 = [ f0.strike[0]*Math.cos(t)+f0.down[0]*Math.sin(t),
+                   f0.strike[1]*Math.cos(t)+f0.down[1]*Math.sin(t),
+                   f0.strike[2]*Math.cos(t)+f0.down[2]*Math.sin(t) ];
+      const u = 1/(1 - emissSign()*P3[2]);
+      pts.push([emitter[0]+u*(P3[0]-emitter[0]), emitter[1]+u*(P3[1]-emitter[1]), 0]);
+    }
+    for (let i=0;i<pts.length-1;i++){
+      const a=P(pts[i]), b=P(pts[i+1]);
+      push((a.z+b.z)/2 - 0.06, ()=>{ ctx.strokeStyle='#1d4ed8'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); });
+    }
+  }
+
+  /* --- 排序绘制 --- */
+  items.sort((A,B)=> B.depth - A.depth);
+  items.forEach(it=>{ ctx.globalAlpha = 1; it.fn(); ctx.globalAlpha = 1; });
+
+  /* --- 文字标注 --- */
+  const lab = (p, text, color, dx, dy)=>{
+    const s = P(p);
+    ctx.font = '600 12.5px "Microsoft YaHei",sans-serif'; ctx.textAlign='left';
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.strokeText(text, s.x+dx, s.y+dy); ctx.fillStyle = color; ctx.fillText(text, s.x+dx, s.y+dy);
+  };
+  lab([1.06,0,0],'E 东', '#334155', 4, 4);
+  lab([-1.06,0,0],'W 西', '#334155', -34, 4);
+  lab([0,1.06,0],'N 北', '#334155', -8, -6);
+  lab([0,-1.06,0],'S 南', '#334155', -6, 16);
+  ctx.font = '600 12.5px "Microsoft YaHei",sans-serif'; ctx.fillStyle='#0e7490';
+  const q = P([0.72,0.72,0]); ctx.fillText('赤平面', q.x+4, q.y+2);
+  ctx.fillStyle='#b45309'; const q2 = P(vscale(f0.down, 0.95)); ctx.fillText('倾斜线(倾向)', q2.x+6, q2.y+4);
+  const hp = halfCirclePoints(S1.hemi);
+  ctx.fillStyle='#c81e14'; const q3 = P(hp[Math.max(0,Math.round(hp.length*0.10))]);
+  ctx.fillText('大圆', q3.x+6, q3.y-6);
+}
+function emissSign(){ return (S1.hemi === 'upper') ? -1 : 1; }
+function halfCirclePoints(hemi){
+  const f = planeFrame(S1.az, S1.dip), out=[];
+  for (let i=0;i<=240;i++){
+    const t = Math.PI*i/240;
+    const p = [ f.strike[0]*Math.cos(t)+f.down[0]*Math.sin(t),
+                f.strike[1]*Math.cos(t)+f.down[1]*Math.sin(t),
+                f.strike[2]*Math.cos(t)+f.down[2]*Math.sin(t) ];
+    if ((hemi==='upper' && p[2]>=-1e-9) || (hemi==='lower' && p[2]<=1e-9)) out.push(p);
+  }
+  return out;
+}
+
+/* =======================================================================
+   第二部分：二维赤平投影图（吴氏网 / 施氏网）
+   ======================================================================= */
+function netCurves(hemi, mode){
+  const curves = [];
+  /* 经线：走向南北、向东西倾斜的一组大圆（过基圆的 N、S 两点） */
+  for (let b=10;b<=80;b+=10){
+    curves.push(greatCircle(90, b, 200));    // 向东倾，弧凸向东
+    curves.push(greatCircle(270, b, 200));   // 向西倾
+  }
+  /* 纬线：绕南北水平轴的小圆（自基圆向内的嵌套弧） */
+  for (let g=10;g<=170;g+=10){
+    const gr = rad(g), pts=[];
+    for (let i=0;i<=200;i++){
+      const phi = Math.PI + Math.PI*i/200;     // 只取下半球那半
+      pts.push([Math.sin(gr)*Math.cos(phi), Math.cos(gr), Math.sin(gr)*Math.sin(phi)]);
+    }
+    curves.push(pts);
+  }
+  return curves;
+}
+function stereoPath(ctx, pts3, toPx, hemi, mode){
+  let started = false;
+  for (const p of pts3){
+    const inHemi = hemi==='upper' ? p[2] >= -1e-9 : p[2] <= 1e-9;
+    if (!inHemi){ started = false; continue; }
+    const s = stereo(p, hemi, mode), px = toPx(s.E, s.N);
+    if (!started){ ctx.moveTo(px.x, px.y); started = true; } else ctx.lineTo(px.x, px.y);
+  }
+}
+function draw2D(){
+  const cv = document.getElementById('c2d');
+  if (!cv.clientHeight) return;
+  const { ctx, w, h } = fitCanvas(cv);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2, cy=h/2, R=Math.min(w,h)*0.44;
+  const toPx = (E,N)=>({ x: cx + R*E, y: cy - R*N });
+  const hemi=S1.hemi, mode=S1.mode;
+
+  /* 基圆 */
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,TAU);
+  ctx.fillStyle='#fbfdff'; ctx.fill();
+  ctx.strokeStyle='#334155'; ctx.lineWidth=2; ctx.stroke();
+
+  /* 投影网 */
+  ctx.strokeStyle = (mode==='area') ? 'rgba(168,185,201,0.75)' : 'rgba(168,185,201,0.85)';
+  ctx.lineWidth = 0.9;
+  ctx.beginPath();
+  netCurves(hemi, mode).forEach(c=> stereoPath(ctx, c, toPx, hemi, mode));
+  ctx.stroke();
+
+  /* 方位十字与刻度 */
+  ctx.strokeStyle='rgba(100,120,145,0.55)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx-R,cy); ctx.lineTo(cx+R,cy); ctx.moveTo(cx,cy-R); ctx.lineTo(cx,cy+R); ctx.stroke();
+  ctx.fillStyle='#334155'; ctx.font='700 14px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('N', cx, cy-R-9); ctx.fillText('S', cx, cy+R+19);
+  ctx.textAlign='left';  ctx.fillText('E', cx+R+7, cy+5);
+  ctx.textAlign='right'; ctx.fillText('W', cx-R-7, cy+5);
+  ctx.textAlign='start';
+  ctx.font='10.5px sans-serif'; ctx.fillStyle='#7b8b9d';
+  for (let d=30; d<360; d+=30){
+    if (d%90===0) continue;
+    const a1=rad(90-d), x1=cx+R*Math.cos(a1), y1=cy-R*Math.sin(a1);
+    const a2=rad(90-d), x2=cx+(R+5)*Math.cos(a2), y2=cy-(R+5)*Math.sin(a2);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.strokeStyle='rgba(100,120,145,0.5)'; ctx.stroke();
+  }
+
+  /* 大圆（随"逐点投射"动画逐步生成） */
+  const K = keyPoints(S1.az, S1.dip, hemi, mode);
+  const f1 = planeFrame(S1.az, S1.dip);
+  const t00 = (hemi === 'upper') ? Math.PI : 0;
+  const NMAX = 240, nEnd = Math.max(1, Math.round(NMAX*Math.max(0.0001, S1.anim)));
+  ctx.beginPath();
+  for (let i=0;i<=nEnd;i++){
+    const t = t00 + Math.PI*i/NMAX;
+    const p3 = [ f1.strike[0]*Math.cos(t)+f1.down[0]*Math.sin(t),
+                 f1.strike[1]*Math.cos(t)+f1.down[1]*Math.sin(t),
+                 f1.strike[2]*Math.cos(t)+f1.down[2]*Math.sin(t) ];
+    const s = stereo(p3, hemi, mode), px = toPx(s.E, s.N);
+    if (i===0) ctx.moveTo(px.x,px.y); else ctx.lineTo(px.x,px.y);
+  }
+  ctx.strokeStyle='#c81e14'; ctx.lineWidth=3.2; ctx.lineCap='round'; ctx.stroke();
+
+  /* 以下标注随动画进度淡入 */
+  ctx.globalAlpha = Math.min(1, S1.anim*1.6);
+
+  /* 走向线（大圆两端连线，即基圆上的弦） */
+  const s1=toPx(K.strikePts[0].E,K.strikePts[0].N), s2=toPx(K.strikePts[1].E,K.strikePts[1].N);
+  ctx.save(); ctx.setLineDash([6,5]); ctx.strokeStyle='#0f766e'; ctx.lineWidth=1.8;
+  ctx.beginPath(); ctx.moveTo(s1.x,s1.y); ctx.lineTo(s2.x,s2.y); ctx.stroke(); ctx.restore();
+  /* 倾向线（由圆心指向弧顶） */
+  const dp = toPx(K.dipPt.E, K.dipPt.N);
+  ctx.strokeStyle='#b45309'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(dp.x,dp.y); ctx.stroke();
+  arrowHead(ctx, dp.x, dp.y, Math.atan2(dp.y-cy, dp.x-cx), 9, '#b45309');
+
+  /* 极点 */
+  const pp = toPx(K.polePt.E, K.polePt.N);
+  ctx.beginPath(); ctx.arc(pp.x,pp.y,6.5,0,TAU); ctx.fillStyle='#e08a00'; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  /* 极点与弧顶的 90° 角距提示 */
+  ctx.save(); ctx.setLineDash([3,3]); ctx.strokeStyle='rgba(224,138,0,0.85)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(pp.x,pp.y); ctx.stroke(); ctx.restore();
+
+  /* 标注 */
+  ctx.font='600 12px "Microsoft YaHei",sans-serif';
+  const tag=(x,y,t,c)=>{ ctx.lineWidth=3.5; ctx.strokeStyle='rgba(255,255,255,0.92)';
+    ctx.strokeText(t,x,y); ctx.fillStyle=c; ctx.fillText(t,x,y); };
+  tag(dp.x+6, dp.y+4, '弧顶(最陡倾斜线)', '#b45309');
+  tag(pp.x+7, pp.y+4, '极点', '#c2740a');
+  tag(s1.x-4, s1.y+16, '走向点', '#0f766e');
+
+  /* 图例 */
+  ctx.globalAlpha = 1;
+  ctx.font='11.5px "Microsoft YaHei",sans-serif'; ctx.fillStyle='#5c6b7d';
+  const lg = (hemi==='upper' ? '上半球投影（自下极点发射）' : '下半球投影（自上极点发射）')
+           + ' · ' + (mode==='area' ? '等面积（施氏网）' : '等角（吴氏网）');
+  ctx.fillText(lg, 10, h-10);
+}
+
+/* =======================================================================
+   第三部分：读数与说明
+   ======================================================================= */
+function updateReadout(){
+  const K = keyPoints(S1.az, S1.dip, S1.hemi, S1.mode);
+  const f = K.frame;
+  const plungeOfDipPt = 90 - S1.dip;                         // 弧顶对应的伏角
+  const polePlunge = S1.dip;                                 // 下半球约定时极点的伏角 = 0? 见下
+  /* 极点的实际伏角（用三维方向算，通用） */
+  const poleDir = (S1.hemi==='upper') ? f.nUp : f.nDown;
+  const pp = lineAttitude(poleDir);
+  const strikeAz = (S1.az + 90) % 360;
+  const diff = Math.abs(((pp.azimuth - S1.az + 540) % 360) - 180);   // 极点方位与倾向的角差
+  const ro = document.getElementById('ro');
+  ro.innerHTML = `
+    <div><span>结构面产状</span><span>${S1.az}°∠${S1.dip}°</span></div>
+    <div><span>走向（两个）</span><span>${strikeAz}° / ${(strikeAz+180)%360}°</span></div>
+    <div><span>弧顶方位</span><span>${S1.hemi==='upper'?(S1.az+180)%360:S1.az}°</span></div>
+    <div><span>弧顶半径 r/R</span><span>${fmt(Math.tan(rad(45-S1.dip/2)),4)}</span></div>
+    <div><span>弧顶伏角</span><span>${fmt(plungeOfDipPt,1)}°</span></div>
+    <div><span>极点方位</span><span>${fmt(pp.azimuth,1)}°</span></div>
+    <div><span>极点半径 r/R</span><span>${fmt(Math.tan(rad(S1.dip/2)),4)}</span></div>
+    <div><span>极点伏角</span><span>${fmt(pp.plunge,1)}°</span></div>`;
+  document.getElementById('explain').innerHTML =
+    `当前为 <b>${S1.hemi==='upper'?'上半球':'下半球'}投影</b>：极射点位于球${S1.hemi==='upper'?'下':'上'}极，
+     射线穿过${S1.hemi==='upper'?'上':'下'}半球上的大圆，与赤平面相交得到图中的<b>大圆弧</b>。
+     弧的两个端点方位等于结构面<b>走向</b>（${strikeAz}°与${(strikeAz+180)%360}°）；
+     弧顶指向该面的<b>倾向</b>（${(S1.az+180)%360}°↔${S1.az}°，随约定不同相差 180°）；
+     弧顶越靠近圆心说明倾角越陡。极点方位为 ${fmt(pp.azimuth,1)}°，与倾向恰好相差 180°（下半球约定），
+     其伏角 ${fmt(pp.plunge,1)}° 与结构面倾角的关系是：<code>极点伏角 = 90° − 倾角</code>。`;
+}
+
+/* =======================================================================
+   第四部分：页面其余交互
+   ======================================================================= */
+function bindPair(sid, nid, key, min, max, onChange){
+  const s=document.getElementById(sid), n=document.getElementById(nid);
+  const apply=(v, from)=>{
+    v = Math.max(min, Math.min(max, Math.round(+v||0)));
+    if (from!=='s') s.value=v; if (from!=='n') n.value=v;
+    onChange(v);
+  };
+  s.addEventListener('input',()=>apply(s.value,'s'));
+  n.addEventListener('change',()=>apply(n.value,'n'));
+  return apply;
+}
+function renderAll(){ draw3D(); draw2D(); updateReadout(); }
+function refresh3D(){ draw3D(); draw2D(); updateReadout(); }
+
+window.addEventListener('load', ()=>{
+  /* --- 标签页（支持 #v1 / #v2 / #v3 锚点直达，方便上课直接翻页） --- */
+  /* 注意：画布高度由 CSS aspect-ratio 决定，不要在这里用 clientWidth 算像素高度——
+     隐藏页面（display:none）里 clientWidth 为 0，会把画布高度设成 0 导致整块图不出来 */
+  const activate = (id)=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x.dataset.v===id));
+    document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on', x.id===id));
+    /* 等浏览器完成可见性切换后的这一帧布局再绘制，此时 clientWidth/Height 才有效 */
+    requestAnimationFrame(()=>{
+      if (id==='v1') refresh3D();
+      if (id==='v2') drawCase();
+    });
+    /* 兜底：个别浏览器/旧内核在 rAF 时布局尚未刷新，再做一次延迟重绘 */
+    setTimeout(()=>{ if (id==='v1') refresh3D(); if (id==='v2') drawCase(); }, 60);
+  };
+  document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=>{
+    activate(t.dataset.v);
+    if (location.hash.slice(1) !== t.dataset.v) history.replaceState(null,'','#'+t.dataset.v);
+  }));
+  if (['v1','v2','v3'].includes(location.hash.slice(1))) activate(location.hash.slice(1));
+
+  /* --- 页面1 --- */
+  const setAz  = bindPair('s_az','n_az','az', 0, 359, v=>{ S1.az=v; refresh3D(); });
+  const setDip = bindPair('s_dip','n_dip','dip', 0, 90, v=>{ S1.dip=v; refresh3D(); });
+  setAz(S1.az); setDip(S1.dip);
+
+  document.querySelectorAll('#hemi .chip').forEach(c=> c.addEventListener('click',()=>{
+    document.querySelectorAll('#hemi .chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on'); S1.hemi=c.dataset.k; refresh3D();
+  }));
+  document.querySelectorAll('#mode .chip').forEach(c=> c.addEventListener('click',()=>{
+    document.querySelectorAll('#mode .chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on'); S1.mode=c.dataset.k; refresh3D();
+  }));
+  document.querySelectorAll('#toggles .chip').forEach(c=> c.addEventListener('click',()=>{
+    c.classList.toggle('on'); S1.show[c.dataset.k]=c.classList.contains('on'); refresh3D();
+  }));
+  document.querySelectorAll('[data-preset]').forEach(c=> c.addEventListener('click',()=>{
+    const [a,d]=c.dataset.preset.split(',').map(Number); S1.az=a; S1.dip=d;
+    setAz(a); setDip(d); refresh3D();
+  }));
+  document.querySelectorAll('[data-step]').forEach(b=> b.addEventListener('click',()=>{
+    const s=+b.dataset.step;
+    S1.playing=false; document.getElementById('play').textContent='▶ 播放"逐点投射"动画';
+    S1.show.rays = s>=1; S1.anim = [0.001, 0.001, 0.55, 1][s];
+    if (s>=3) S1.show.rays = true;
+    document.querySelectorAll('#toggles .chip').forEach(c=>{
+      if (c.dataset.k==='rays') c.classList.toggle('on', S1.show.rays);
+    });
+    refresh3D();
+  }));
+  const playBtn = document.getElementById('play');
+  playBtn.addEventListener('click', ()=>{
+    S1.playing = !S1.playing;
+    if (S1.playing){ S1.anim = 0; playBtn.textContent='⏸ 暂停'; }
+    else playBtn.textContent='▶ 播放"逐点投射"动画';
+  });
+  let last = performance.now();
+  (function loop(now){
+    const dt = Math.min(0.05,(now-last)/1000); last = now;
+    if (S1.playing){
+      S1.anim += dt*0.30;
+      if (S1.anim >= 1){ S1.anim = 1; S1.playing=false; playBtn.textContent='▶ 播放"逐点投射"动画'; }
+      refresh3D();
+    }
+    requestAnimationFrame(loop);
+  })(last);
+
+  /* --- 3D 拖动 --- */
+  const cv3 = document.getElementById('c3d');
+  let drag = null;
+  cv3.addEventListener('pointerdown', e=>{ drag={x:e.clientX,y:e.clientY}; cv3.setPointerCapture(e.pointerId); });
+  cv3.addEventListener('pointermove', e=>{
+    if (!drag) return;
+    cam3.yaw   -= (e.clientX-drag.x)*0.42;
+    cam3.pitch  = Math.max(-8, Math.min(78, cam3.pitch + (e.clientY-drag.y)*0.34));
+    drag = {x:e.clientX,y:e.clientY}; draw3D();
+  });
+  cv3.addEventListener('pointerup', ()=> drag=null);
+  cv3.addEventListener('pointercancel', ()=> drag=null);
+  cv3.addEventListener('wheel', e=>{ e.preventDefault();
+    cam3.dist = Math.max(3.2, Math.min(12, cam3.dist * (1 + Math.sign(e.deltaY)*0.08))); draw3D(); }, {passive:false});
+
+  /* --- 页面2：边坡判别 --- */
+  const S2 = { cs:{az:110,dip:60}, ns:{az:110,dip:25}, j1:{az:120,dip:45}, j2:{az:210,dip:70}, phi:30 };
+  const bind = (sid,nid,obj,key,min,max,drawFn)=> bindPair(sid,nid,key,min,max,v=>{ obj[key]=v; drawFn(); });
+  bind('a_cs','q_cs', S2.cs,'az',0,359, drawCase);
+  bind('a_csd','q_csd',S2.cs,'dip',0,90, drawCase);
+  bind('a_ns','q_ns', S2.ns,'az',0,359, drawCase);
+  bind('a_nsd','q_nsd',S2.ns,'dip',0,90, drawCase);
+  bind('a_1','q_1',  S2.j1,'az',0,359, drawCase);
+  bind('a_1d','q_1d',S2.j1,'dip',0,90, drawCase);
+  bind('a_2','q_2',  S2.j2,'az',0,359, drawCase);
+  bind('a_2d','q_2d',S2.j2,'dip',0,90, drawCase);
+  bind('a_phi','q_phi',S2,'phi',0,60, drawCase);
+  document.getElementById('a_cs').value=S2.cs.az; document.getElementById('q_cs').value=S2.cs.az;
+  document.getElementById('a_csd').value=S2.cs.dip; document.getElementById('q_csd').value=S2.cs.dip;
+  document.getElementById('a_ns').value=S2.ns.az; document.getElementById('q_ns').value=S2.ns.az;
+  document.getElementById('a_nsd').value=S2.ns.dip; document.getElementById('q_nsd').value=S2.ns.dip;
+  document.getElementById('a_1').value=S2.j1.az; document.getElementById('q_1').value=S2.j1.az;
+  document.getElementById('a_1d').value=S2.j1.dip; document.getElementById('q_1d').value=S2.j1.dip;
+  document.getElementById('a_2').value=S2.j2.az; document.getElementById('q_2').value=S2.j2.az;
+  document.getElementById('a_2d').value=S2.j2.dip; document.getElementById('q_2d').value=S2.j2.dip;
+  document.getElementById('a_phi').value=S2.phi; document.getElementById('q_phi').value=S2.phi;
+
+  const cases = {
+    plane:  {cs:[110,60], ns:[110,25], j1:[115,45], j2:[250,75], phi:30},
+    wedge:  {cs:[110,60], ns:[110,25], j1:[60,50],  j2:[160,65], phi:30},
+    topple: {cs:[110,65], ns:[110,20], j1:[290,80], j2:[200,40], phi:32},
+    stable: {cs:[110,60], ns:[110,25], j1:[300,35], j2:[210,45], phi:35}
+  };
+  const setV = (id,val)=>{ const el=document.getElementById(id); el.value=val; el.dispatchEvent(new Event('input')); };
+  document.querySelectorAll('[data-case]').forEach(c=> c.addEventListener('click', ()=>{
+    const k=c.dataset.case, d=cases[k];
+    document.querySelectorAll('[data-case]').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');
+    setV('a_cs',d.cs[0]); setV('a_csd',d.cs[1]); setV('a_ns',d.ns[0]); setV('a_nsd',d.ns[1]);
+    setV('a_1',d.j1[0]);  setV('a_1d',d.j1[1]);  setV('a_2',d.j2[0]);  setV('a_2d',d.j2[1]);
+    setV('a_phi',d.phi);
+  }));
+
+  /* 尺寸变化时只需重绘：画布高度由 CSS aspect-ratio 自动维持 */
+  window.addEventListener('resize', ()=>{
+    if (document.getElementById('v1').classList.contains('on')) refresh3D();
+    if (document.getElementById('v2').classList.contains('on')) drawCase();
+  });
+  requestAnimationFrame(()=>{ refresh3D(); drawCase(); });
+});
+
+/* ---------- 边坡判别绘制 + 判定 ---------- */
+/* 环形扇区填充（用于判别区）：a0,a1 为数学角(度)，x 向东、y 向北 */
+function annularSector(ctx, cx, cy, Rin, Rout, a0, a1, fill){
+  const N = 60;
+  ctx.beginPath();
+  for (let i=0;i<=N;i++){ const a=rad(a0+(a1-a0)*i/N), x=cx+Rout*Math.cos(a), y=cy-Rout*Math.sin(a);
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+  for (let i=N;i>=0;i--){ const a=rad(a0+(a1-a0)*i/N), x=cx+Rin*Math.cos(a), y=cy-Rin*Math.sin(a); ctx.lineTo(x,y); }
+  ctx.closePath(); ctx.fillStyle=fill; ctx.fill();
+}
+
+function drawCase(){
+  const cv = document.getElementById('cs2d');
+  if (!cv || !cv.clientHeight) return;
+  const { ctx, w, h } = fitCanvas(cv);
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2, cy=h/2, R=Math.min(w,h)*0.44;
+  const toPx=(E,N)=>({x:cx+R*E, y:cy-R*N});
+  const S2 = { cs:{az:+document.getElementById('a_cs').value, dip:+document.getElementById('a_csd').value},
+               ns:{az:+document.getElementById('a_ns').value, dip:+document.getElementById('a_nsd').value},
+               j1:{az:+document.getElementById('a_1').value,  dip:+document.getElementById('a_1d').value},
+               j2:{az:+document.getElementById('a_2').value,  dip:+document.getElementById('a_2d').value},
+               phi:+document.getElementById('a_phi').value };
+  const hemi='lower', mode='angle';
+
+  /* 基圆 + 网 */
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,TAU); ctx.fillStyle='#fbfdff'; ctx.fill();
+  ctx.strokeStyle='#334155'; ctx.lineWidth=2; ctx.stroke();
+  ctx.strokeStyle='rgba(168,185,201,0.8)'; ctx.lineWidth=0.9;
+  ctx.beginPath(); netCurves(hemi,mode).forEach(c=>stereoPath(ctx,c,toPx,hemi,mode)); ctx.stroke();
+  ctx.strokeStyle='rgba(100,120,145,0.5)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx-R,cy); ctx.lineTo(cx+R,cy); ctx.moveTo(cx,cy-R); ctx.lineTo(cx,cy+R); ctx.stroke();
+  ctx.fillStyle='#334155'; ctx.font='700 14px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('N',cx,cy-R-9); ctx.fillText('S',cx,cy+R+19);
+  ctx.textAlign='left'; ctx.fillText('E',cx+R+7,cy+5); ctx.textAlign='right'; ctx.fillText('W',cx-R-7,cy+5);
+  ctx.textAlign='start';
+
+  /* ---- 判别区（核心可视化：摩擦圆是分界线）----
+     ① 圆内、坡向 ±20°：滑动出露区 —— 供"大圆弧顶"落入，圆顶半径 ∈ (tan(45-坡角/2), tan(45-φ/2))
+        等价条件：φ < 结构面倾角 < 坡角
+     ② 圆外靠基圆、坡向 ±20°：倾倒区 —— 供"极点"落入，极点伏角 ≤ φ（结构面陡立、倾向坡内）      */
+  const aMid = 90 - S2.cs.az;                       // 坡向对应的数学角
+  const a0 = aMid - 20, a1 = aMid + 20;             // ±20° 侧向限制
+  const rFric = Math.tan(rad(45 - S2.phi/2));       // 摩擦圆半径
+  const rEnv  = Math.tan(rad(45 - S2.cs.dip/2));    // 坡面大圆弧顶半径
+  if (rFric > rEnv)  /* φ < 坡角时才有滑动出露区，否则该区退化 */
+    annularSector(ctx, cx, cy, R*rEnv, R*rFric, a0, a1, 'rgba(245,158,11,0.26)');
+  annularSector(ctx, cx, cy, R*rFric, R, a0, a1, 'rgba(219,39,119,0.16)');
+  /* 两个区的边界（虚线弧） */
+  const arcDash = (r, col)=>{ ctx.beginPath();
+    for (let i=0;i<=60;i++){ const a=rad(a0+(a1-a0)*i/60); const x=cx+r*Math.cos(a), y=cy-r*Math.sin(a);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.setLineDash([6,4]); ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.stroke(); ctx.setLineDash([]); };
+  arcDash(R*rEnv, 'rgba(217,45,32,0.75)');
+  arcDash(R*rFric, 'rgba(124,58,237,0.75)');
+  /* 区标注延后到弧线之后绘制（见下方 labelZones），以免被大圆弧压住 */
+  const labelZones = ()=>{
+    const lay = (r, ang, txt, col, sub)=>{                 /* ang: 数学角(度) */
+      const a = rad(ang), x = cx + r*Math.cos(a), y = cy - r*Math.sin(a);
+      ctx.textAlign='center'; ctx.font='600 11.5px "Microsoft YaHei",sans-serif';
+      ctx.lineWidth=3.5; ctx.strokeStyle='rgba(255,255,255,0.94)';
+      ctx.strokeText(txt, x, y); ctx.fillStyle=col; ctx.fillText(txt, x, y);
+      if (sub){ ctx.font='10.5px "Microsoft YaHei",sans-serif';
+        ctx.strokeText(sub, x, y+13); ctx.fillStyle=col; ctx.fillText(sub, x, y+13); }
+      ctx.textAlign='start';
+    };
+    if (rFric > rEnv) lay(R*(rEnv+0.22*(rFric-rEnv)), aMid+12, '滑动出露区', '#b45309', '弧顶落入');
+    lay(R*(rFric+0.5*(1-rFric)), aMid-12, '倾倒区', '#be185d', '极点落入');
+    /* 摩擦圆标注放在弧线较少的西北侧 */
+    const fr = R*rFric + 6, fa = rad(140);
+    ctx.font='600 11.5px "Microsoft YaHei",sans-serif';
+    ctx.lineWidth=3.5; ctx.strokeStyle='rgba(255,255,255,0.94)';
+    ctx.strokeText(`摩擦圆 φ=${S2.phi}°`, cx+fr*Math.cos(fa), cy-fr*Math.sin(fa));
+    ctx.fillStyle='#7c3aed'; ctx.fillText(`摩擦圆 φ=${S2.phi}°`, cx+fr*Math.cos(fa), cy-fr*Math.sin(fa));
+  };
+
+  /* 摩擦圆（判别分界线） */
+  ctx.beginPath(); ctx.arc(cx,cy,R*rFric,0,TAU);
+  ctx.fillStyle='rgba(124,58,237,0.10)'; ctx.fill();
+  ctx.strokeStyle='#7c3aed'; ctx.lineWidth=1.8; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+
+  /* 四条大圆（标注沿弧错开，避免与判别区文字打架） */
+  const arc = (obj, col, lw, label, lpos)=>{
+    const K = keyPoints(obj.az, obj.dip, hemi, mode);
+    ctx.beginPath(); stereoPath(ctx, K.gcAll, toPx, hemi, mode);
+    ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.stroke();
+    const pp = toPx(K.polePt.E, K.polePt.N);
+    ctx.beginPath(); ctx.arc(pp.x,pp.y,5.5,0,TAU); ctx.fillStyle='#e08a00'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.8; ctx.stroke();
+    const i = Math.max(0, Math.min(K.gcHalf.length-1, Math.round((lpos===undefined?0.5:lpos)*(K.gcHalf.length-1))));
+    const sp = stereo(K.gcHalf[i], hemi, mode); const mp = toPx(sp.E, sp.N);
+    ctx.font='600 11.5px "Microsoft YaHei",sans-serif';
+    ctx.lineWidth=3.5; ctx.strokeStyle='rgba(255,255,255,0.92)';
+    ctx.strokeText(label, mp.x+6, mp.y+4); ctx.fillStyle=col; ctx.fillText(label, mp.x+6, mp.y+4);
+  };
+  arc(S2.cs, '#d92d20', 3.4, `坡面 cs ${S2.cs.az}°∠${S2.cs.dip}°`, 0.20);
+  arc(S2.ns, '#0e7490', 2.0, `坡顶面 ns ${S2.ns.az}°∠${S2.ns.dip}°`, 0.80);
+  arc(S2.j1, '#2563eb', 2.6, `J1 ${S2.j1.az}°∠${S2.j1.dip}°`, 0.30);
+  arc(S2.j2, '#7c3aed', 2.6, `J2 ${S2.j2.az}°∠${S2.j2.dip}°`, 0.70);
+  labelZones();
+
+  /* 交棱线 M */
+  const L = intersectionLine(S2.j1.az, S2.j1.dip, S2.j2.az, S2.j2.dip);
+  const at = lineAttitude(L);
+  const spM = stereo(L, hemi, mode), pm = toPx(spM.E, spM.N);
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(pm.x,pm.y);
+  ctx.strokeStyle='rgba(17,24,39,0.45)'; ctx.lineWidth=1.2; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(pm.x,pm.y,7,0,TAU); ctx.fillStyle='#111827'; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  ctx.font='700 12px "Microsoft YaHei",sans-serif';
+  ctx.lineWidth=3.5; ctx.strokeStyle='rgba(255,255,255,0.92)';
+  ctx.strokeText('M 交棱线', pm.x+10, pm.y+18); ctx.fillStyle='#111827'; ctx.fillText('M 交棱线', pm.x+10, pm.y+18);
+
+  judge(S2, at, L);
+}
+
+function angDiff(a,b){ let d=Math.abs(((a-b)%360+540)%360-180); return d; }
+function judge(S2, M, L){
+  const cs = S2.cs, phi = S2.phi;
+  const out = [];
+  const card = (title, hit, conds, concl)=>{
+    out.push(`<div class="item ${hit?'hit':'miss'}">
+      <span class="tag ${hit?'hit':'miss'}">${hit?'可能发生':'不满足'}</span>
+      <div><b>${title}</b><p>${conds}</p>${concl?`<p><b style="color:${hit?'#b42318':'#067647'}">${concl}</b></p>`:''}</div>
+    </div>`);
+  };
+  /* 平面滑动 */
+  [['J1',S2.j1],['J2',S2.j2]].forEach(([nm,J])=>{
+    const c1 = angDiff(J.az, cs.az) <= 20;
+    const c2 = J.dip > phi;
+    const c3 = J.dip < cs.dip;
+    card(`沿 ${nm} 的平面滑动`,
+      c1&&c2&&c3,
+      `① 倾向差 |${J.az}°−${cs.az}°| = ${fmt(angDiff(J.az,cs.az),1)}° ${c1?'≤':'&gt;'} 20° ${c1?'✓':'✗'}；
+       ② 倾角 ${J.dip}° ${c2?'&gt;':'≤'} φ=${phi}° ${c2?'✓':'✗'}；
+       ③ 倾角 ${J.dip}° ${c3?'&lt;':'≥'} 坡角 ${cs.dip}°（能否在坡面出露）${c3?'✓':'✗'}`,
+      c1&&c2&&c3 ? `${nm} 具备平面滑动的几何条件（倾向、摩擦、出露三项均满足）。` : '');
+  });
+  /* 楔形体滑动 */
+  {
+    const c1 = angDiff(M.azimuth, cs.az) <= 20;
+    const c2 = M.plunge > phi;
+    const c3 = M.plunge < cs.dip;
+    card('沿 J1 ∩ J2 交棱线的楔形体滑动',
+      c1&&c2&&c3,
+      `交棱线 M：倾伏向 ${fmt(M.azimuth,1)}°、倾伏角 ${fmt(M.plunge,1)}°。<br>
+       ① 倾伏向与坡向差 = ${fmt(angDiff(M.azimuth,cs.az),1)}° ${c1?'≤':'&gt;'} 20° ${c1?'✓':'✗'}；
+       ② 倾伏角 ${fmt(M.plunge,1)}° ${c2?'&gt;':'≤'} φ=${phi}° ${c2?'✓':'✗'}；
+       ③ 倾伏角 ${fmt(M.plunge,1)}° ${c3?'&lt;':'≥'} 坡角 ${cs.dip}° ${c3?'✓':'✗'}`,
+      c1&&c2&&c3 ? '楔形体被两组结构面切割且在坡面出露，具备楔形滑动条件。' : '');
+  }
+  /* 倾倒（层状/弯曲倾倒） */
+  [['J1',S2.j1],['J2',S2.j2]].forEach(([nm,J])=>{
+    const pole = lineAttitude(planeFrame(J.az,J.dip).nDown);
+    const anti = (cs.az+180)%360;                                  // 反坡向
+    const c1 = angDiff(J.az, anti) <= 20;                          // 倾向坡内、走向与坡面近平行
+    const c2 = pole.plunge <= phi;                                 // 极点落入摩擦圆外圈（结构面陡立）
+    const c3 = cs.dip >= 30;                                       // 坡面足够陡
+    const goodman = pole.plunge <= (cs.dip - phi);                 // Goodman & Bray 式(15.7)
+    const c2b = pole.plunge <= 30;                                 // 部分文献采用的简化限值
+    card(`沿 ${nm} 的倾倒（层状倾倒）破坏`,
+      c1&&c2&&c3,
+      `结构面倾向 ${J.az}°、倾角 ${J.dip}°；其极点方位 ${fmt(pole.azimuth,1)}°、伏角 ${fmt(pole.plunge,1)}°（= 90° − ${J.dip}°）。<br>
+       ① 倾向与反坡向(${anti}°)差 = ${fmt(angDiff(J.az,anti),1)}° ${c1?'≤':'&gt;'} 20°（走向与坡面近平行、倾向坡内）${c1?'✓':'✗'}；
+       ② 极点伏角 ${fmt(pole.plunge,1)}° ${c2?'≤':'&gt;'} φ=${phi}°（即结构面陡于 <b>90°−φ = ${fmt(90-phi,1)}°</b>）${c2?'✓':'✗'}；
+       ③ 坡角 ${cs.dip}° ${c3?'≥':'&lt;'} 30° ${c3?'✓':'✗'}<br>
+       <span style="color:#5c6b7d">其他文献的强度条件：极点伏角 ≤ 30° → ${c2b?'✓':'✗'}；Goodman &amp; Bray 式 (90°−ψ<sub>p</sub>) ≤ ψ<sub>f</sub>−φ → ${fmt(pole.plunge,1)}° ≤ ${fmt(cs.dip-phi,1)}° ${goodman?'✓':'✗'}</span>`,
+      c1&&c2&&c3 ? '结构面走向与坡面近平行、倾向坡内且陡立，具备倾倒（层状倾倒）破坏的几何条件。' : '');
+  });
+
+  const hits = out.filter(s=>s.includes('tag hit')).length;
+  const banner = hits>0
+    ? `<div class="big bad">判别结论：存在 ${hits} 项满足运动学判据的潜在失稳模式，需进一步做极限平衡 / 数值计算。</div>`
+    : `<div class="big ok">判别结论：三项运动学判据均不满足，几何上不具备明显滑动/倾倒条件（仍建议做整体稳定性计算）。</div>`;
+  document.getElementById('judge').innerHTML = banner + '<div class="res">' + out.join('') + '</div>'
+    + `<div class="note">提示：以上均为<b>几何（运动学）判据</b>，只回答"能否滑动"，不给出安全系数。
+       工程判定请结合《岩质边坡工程》相关规范与 Hoek &amp; Bray 图解法综合使用。</div>`;
+}
+</script>
+</body>
+</html>
