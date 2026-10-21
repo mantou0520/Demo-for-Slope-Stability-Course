@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>黏性土边坡稳定性：整体圆弧法与条分法</title>
+<style>
+  :root{
+    --ink:#16212e; --muted:#5c6b7d; --line:#e3e9f1; --line2:#d6dce5;
+    --blue:#1e4fa8; --blue2:#3d7bd9; --navy:#0e3f8c; --red:#c81e14;
+    --green:#067647; --amber:#b45309; --sand:#f7f9fc; --pink:#be185d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+    color:var(--ink); background:#eef2f7; font-size:14px; line-height:1.6;
+  }
+  header{
+    background:var(--navy); color:#fff; padding:10px 22px;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  }
+  header h1{font-size:19px; margin:0; font-weight:700; letter-spacing:.5px}
+  header .sub{font-size:12.5px; color:#9dbeea}
+  nav{margin-left:auto; display:flex; gap:6px}
+  .tab{
+    padding:7px 16px; border-radius:6px 6px 0 0; cursor:pointer;
+    background:rgba(255,255,255,.10); color:#cfe0f7; font-size:13.5px;
+    border:1px solid transparent; border-bottom:none; user-select:none;
+  }
+  .tab:hover{background:rgba(255,255,255,.18)}
+  .tab.on{background:#f4f7fb; color:var(--navy); font-weight:700}
+  main{padding:14px 18px 22px}
+  .view{display:none}
+  .view.on{display:block}
+
+  /* ---------- 第 1 页 ---------- */
+  .grid1{display:grid; grid-template-columns:minmax(0,1.62fr) minmax(330px,.95fr); gap:14px}
+  .panel{background:#fff; border:1px solid var(--line); border-radius:10px}
+  .canvasbox{position:relative; background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden}
+  canvas{display:block; width:100%}
+  #c1{aspect-ratio:1.56/1; touch-action:none; cursor:grab}
+  #c1.drag{cursor:grabbing}
+  .hint{
+    position:absolute; left:12px; bottom:10px; font-size:12px; color:var(--muted);
+    background:rgba(255,255,255,.86); padding:3px 9px; border-radius:5px; border:1px solid var(--line)
+  }
+  .legend{
+    display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted);
+    padding:8px 4px 0
+  }
+  .legend i{display:inline-block; width:12px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle}
+
+  .tblbox{background:#fff; border:1px solid var(--line); border-radius:10px; margin-top:12px; overflow:hidden}
+  .tblbox h4{margin:0; padding:8px 12px; font-size:13px; background:var(--sand); border-bottom:1px solid var(--line); color:#33465c}
+  .tblwrap{max-height:186px; overflow:auto}
+  table{border-collapse:collapse; width:100%; font-size:12.5px; font-variant-numeric:tabular-nums}
+  th,td{padding:5px 8px; text-align:right; border-bottom:1px solid #eef2f7; white-space:nowrap}
+  th{position:sticky; top:0; background:#f4f7fb; color:#33465c; font-weight:600; text-align:right; z-index:2}
+  th:first-child,td:first-child{text-align:center}
+  tbody tr:hover{background:#f7fbff}
+  tbody tr.sel{background:#eaf2ff}
+
+  .col-right{display:flex; flex-direction:column; gap:11px; max-height:calc(100vh - 92px); overflow-y:auto; padding-right:2px}
+  .card{background:#fff; border:1px solid var(--line); border-radius:10px; padding:11px 13px}
+  .card h3{margin:0 0 8px; font-size:13.5px; color:var(--navy); display:flex; align-items:center; gap:7px}
+  .card h3 .dot{width:4px; height:14px; background:var(--blue2); border-radius:2px}
+  .row{display:grid; grid-template-columns:66px 1fr 52px; align-items:center; gap:8px; margin:5px 0}
+  .row label{font-size:12.5px; color:var(--muted); white-space:nowrap}
+  .row input[type=range]{width:100%; accent-color:var(--blue2); height:18px}
+  .row .val{font-size:12.5px; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink)}
+  .row .val small{color:var(--muted)}
+
+  .res{display:flex; flex-direction:column; gap:6px}
+  .res .item{
+    display:grid; grid-template-columns:1fr auto; align-items:center;
+    padding:7px 10px; border-radius:7px; border:1px solid var(--line); background:#fcfdff;
+  }
+  .res .item.on{border-color:var(--blue2); background:#eef5ff; box-shadow:inset 3px 0 0 var(--blue2)}
+  .res .item .nm{font-size:13px}
+  .res .item .nm em{font-style:normal; color:var(--muted); font-size:11.5px; margin-left:6px}
+  .res .item .fs{font-size:17px; font-weight:700; font-variant-numeric:tabular-nums}
+  .res .item .fs.warnc{color:#98a2b3; font-size:13px; font-weight:400}
+  .tag{display:inline-block; font-size:11px; padding:1px 6px; border-radius:8px; margin-left:6px; vertical-align:1px}
+  .tag.ok{background:#e7f5ee; color:var(--green)}
+  .tag.no{background:#fbeaea; color:var(--red)}
+  .tag.na{background:#f0f2f5; color:#8b97a8}
+
+  .btns{display:flex; gap:7px; flex-wrap:wrap; margin-top:8px}
+  button{
+    font-family:inherit; font-size:12.5px; padding:6px 11px; border-radius:6px; cursor:pointer;
+    border:1px solid var(--line2); background:#fff; color:#33465c;
+  }
+  button:hover{background:#f4f8ff; border-color:var(--blue2); color:var(--blue)}
+  button.pri{background:var(--blue); color:#fff; border-color:var(--blue)}
+  button.pri:hover{background:#173f86; color:#fff}
+  #c2{aspect-ratio:1.5/1; border-top:1px solid var(--line); margin-top:8px}
+
+  /* ---------- 第 2 页 ---------- */
+  .grid2{display:grid; grid-template-columns:300px minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start}
+  .big{font-size:30px; font-weight:700; color:var(--navy); font-variant-numeric:tabular-nums; line-height:1.1}
+  .lab{font-size:12px; color:var(--muted)}
+  .klist{display:flex; flex-direction:column; gap:5px; margin-top:6px}
+  .krow{
+    display:grid; grid-template-columns:1fr 34px 46px; gap:8px; align-items:center;
+    padding:6px 9px; border:1px solid var(--line); border-radius:6px; background:#fcfdff; font-size:12.8px;
+  }
+  .krow .sym{color:var(--muted); font-size:12px; text-align:center}
+  .krow .cnt{text-align:right; font-variant-numeric:tabular-nums; font-weight:600}
+  .krow.off{opacity:.45; background:#f6f7f9; text-decoration:line-through}
+  .krow.off .cnt{text-decoration:none; color:#98a2b3}
+  .krow.off::after{}
+  .sumrow{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-top:7px; padding:7px 9px; background:#eef5ff; border:1px solid #c9dcf7; border-radius:6px;
+  }
+  .eqbar{display:flex; gap:2px; align-items:flex-end; height:56px; margin:10px 0 4px}
+  .eqbar i{flex:1; background:#cfe0f7; border-radius:2px 2px 0 0}
+  .status{padding:9px 11px; border-radius:7px; font-size:13px; line-height:1.65}
+  .status.red{background:#fdeeee; border:1px solid #f3c9c9; color:#8f1d18}
+  .status.green{background:#e9f7ef; border:1px solid #bfe5cf; color:#065f46}
+  .status.amber{background:#fff6e8; border:1px solid #f5dcae; color:#8a5300}
+  .note{font-size:12.5px; color:var(--muted); line-height:1.75}
+  .note b{color:#33465c}
+  .methodsel{display:flex; gap:6px; margin-top:4px}
+  .methodsel button{flex:1; text-align:center; padding:7px 4px}
+  .methodsel button.on{background:var(--blue); color:#fff; border-color:var(--blue); font-weight:700}
+
+  /* ---------- 第 3 页 ---------- */
+  .grid3{display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start}
+  .formula{
+    background:#f4f8ff; border-left:3px solid var(--blue2); border-radius:0 6px 6px 0;
+    padding:8px 12px; margin:7px 0; font-size:13.5px; color:#12325e; overflow-x:auto;
+  }
+  .formula code{font-family:"Cambria Math",Georgia,serif; font-size:14.5px}
+  ul.tight{margin:6px 0 0 18px; padding:0}
+  ul.tight li{margin:3px 0; font-size:13px; color:#33465c; line-height:1.7}
+  .qa{border-top:1px dashed var(--line2); padding-top:9px; margin-top:9px}
+  .qa h5{margin:0 0 3px; font-size:13px; color:var(--navy)}
+  .qa p{margin:0; font-size:12.8px; color:#3b4a5c; line-height:1.75}
+  @media (max-width:1180px){
+    .grid1{grid-template-columns:1fr}
+    .col-right{max-height:none}
+    .grid2{grid-template-columns:1fr}
+    .grid3{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>黏性土边坡稳定性：整体圆弧法与条分法</h1>
+    <div class="sub">《边坡与支护工程》· 定量计算 —— 滑弧、土条、平衡方程与安全系数</div>
+  </div>
+  <nav>
+    <div class="tab on" data-v="v1">① 计算演示</div>
+    <div class="tab" data-v="v2">② 未知数与方程</div>
+    <div class="tab" data-v="v3">③ 公式与假定</div>
+  </nav>
+</header>
+
+<main>
+
+<!-- ================= 第 1 页：计算演示 ================= -->
+<section class="view on" id="v1">
+  <div class="grid1">
+    <div>
+      <div class="canvasbox">
+        <canvas id="c1"></canvas>
+        <div class="hint">拖动圆心可移动滑弧 · 滚轮改变半径</div>
+      </div>
+      <div class="legend">
+        <span><i style="background:#c81e14"></i>滑动圆弧</span>
+        <span><i style="background:#8a6d3b"></i>土条分界</span>
+        <span><i style="background:#1e4fa8"></i>条底法向力 N</span>
+        <span><i style="background:#067647"></i>条底抗剪力 T</span>
+        <span><i style="background:#b45309"></i>自重 W</span>
+      </div>
+
+      <div class="tblbox">
+        <h4>土条计算表（点击某行可在右侧查看该土条的受力图）</h4>
+        <div class="tblwrap">
+          <table id="tbl">
+            <thead><tr>
+              <th>条号</th><th>b (m)</th><th>h (m)</th><th>W (kN/m)</th>
+              <th>α (°)</th><th>l (m)</th><th>N′ (kN/m)</th><th>T_f (kN/m)</th><th>W·sinα</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="card">
+        <h3><span class="dot"></span>边坡几何与土性</h3>
+        <div class="row"><label>坡高 H</label><input id="sH" type="range" min="4" max="30" step="0.5" value="10"><div class="val" id="vH">10 m</div></div>
+        <div class="row"><label>坡率 1:m</label><input id="sM" type="range" min="0.5" max="4" step="0.1" value="1.5"><div class="val" id="vM">1:1.5</div></div>
+        <div class="row"><label>重度 γ</label><input id="sG" type="range" min="14" max="22" step="0.5" value="18"><div class="val" id="vG">18</div></div>
+        <div class="row"><label>黏聚力 c</label><input id="sC" type="range" min="0" max="60" step="1" value="20"><div class="val" id="vC">20 kPa</div></div>
+        <div class="row"><label>摩擦角 φ</label><input id="sP" type="range" min="0" max="40" step="1" value="15"><div class="val" id="vP">15°</div></div>
+        <div class="row"><label>孔压 u</label><input id="sR" type="range" min="0" max="0.6" step="0.02" value="0"><div class="val" id="vR">0.0</div></div>
+        <div class="row"><label>土条数 n</label><input id="sN" type="range" min="3" max="40" step="1" value="8"><div class="val" id="vN">8</div></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot"></span>滑弧位置</h3>
+        <div class="row"><label>圆心 x₀</label><input id="sX" type="range" min="-5" max="45" step="0.25" value="8.25"><div class="val" id="vX">8.3</div></div>
+        <div class="row"><label>圆心 y₀</label><input id="sY" type="range" min="2" max="40" step="0.25" value="12.5"><div class="val" id="vY">12.5</div></div>
+        <div class="row"><label>半径 R</label><input id="sRad" type="range" min="3" max="50" step="0.25" value="15"><div class="val" id="vRad">15.0</div></div>
+        <div class="btns">
+          <button id="btnSearch" class="pri">搜索最危险滑弧</button>
+          <button id="btnReset">恢复默认</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot"></span>稳定安全系数 F<sub>s</sub></h3>
+        <div class="res" id="res"></div>
+        <div class="note" id="resNote" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot"></span>第 <span id="selNo">4</span> 条土条的受力</h3>
+        <canvas id="c2" style="aspect-ratio:1.55/1"></canvas>
+        <div class="note" style="margin-top:4px">
+          W 自重；N 条底法向力；T 条底剪力；E 条间法向力；X 条间切向力。
+          <span style="color:#b42318">瑞典法令 E=X=0</span>；<span style="color:#1e4fa8">简化 Bishop 令 X=0、保留 E</span>。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 第 2 页：未知数与方程 ================= -->
+<section class="view" id="v2">
+  <div class="grid2">
+
+    <div class="card">
+      <h3><span class="dot"></span>设定与假定</h3>
+      <div class="row" style="grid-template-columns:52px 1fr 44px">
+        <label>土条数 n</label><input id="sN2" type="range" min="2" max="20" step="1" value="8"><div class="val" id="vN2">8</div>
+      </div>
+      <div class="methodsel">
+        <button data-mm="general">通用模型</button>
+        <button data-mm="swedish" class="on">瑞典条分法</button>
+        <button data-mm="bishop">简化 Bishop</button>
+      </div>
+      <div class="note" style="margin-top:10px">
+        点上面三个按钮，可以看到<b>每作一个假定，哪些未知量被划掉</b>，以及总数怎么从 5n−2 降到 2n+1。
+      </div>
+      <div style="margin-top:12px; padding:10px 11px; background:var(--sand); border:1px solid var(--line); border-radius:7px">
+        <div class="lab">未知量总个数</div>
+        <div class="big" id="unkTotal">17</div>
+        <div class="lab" id="unkExpr" style="margin-top:2px">2n+1</div>
+      </div>
+      <div style="margin-top:10px; padding:10px 11px; background:var(--sand); border:1px solid var(--line); border-radius:7px">
+        <div class="lab">可列出的方程个数</div>
+        <div class="big" id="eqTotal">32</div>
+        <div class="lab" id="eqExpr" style="margin-top:2px">4n</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>未知量从哪来（每个土条 + 每个分界面）</h3>
+      <div class="klist" id="klist"></div>
+      <div class="sumrow">
+        <span style="font-size:13px">合计</span>
+        <span><b id="sumTxt" style="font-size:15px">2n+1 = 17</b></span>
+      </div>
+      <div class="note" style="margin-top:8px">
+        通用模型的分解式：<b>2n + 3(n−1) + 1 = 5n−2</b>，即「滑面 2n 个 + n−1 个分界面各 3 个 + 安全系数 1 个」。
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>方程从哪来（每个土条 4 个）</h3>
+      <div class="klist" id="elist"></div>
+      <div class="sumrow">
+        <span style="font-size:13px">合计</span>
+        <span><b id="eqSumTxt" style="font-size:15px">4n = 32</b></span>
+      </div>
+      <div class="status amber" id="statusBox" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3><span class="dot"></span>结论：为什么瑞典法是 2n+1，简化 Bishop 是 4n</h3>
+    <div class="grid3" style="grid-template-columns:1fr 1fr 1fr">
+      <div>
+        <div class="note"><b style="color:#0e3f8c">① 通用条分模型（不作任何假定）</b></div>
+        <div class="formula"><code>未知数 5n−2　|　方程 4n　|　超静定 n−2 次</code></div>
+        <div class="note">n=10 时，38 个未知量、40 个方程却仍"解不出来"，原因不是方程不够，而是<b>方程之间不独立</b>——条与条之间的内力在求和时会成对消去，真正有效的约束只有 4n−(n−2) 个。</div>
+      </div>
+      <div>
+        <div class="note"><b style="color:#b42318">② 瑞典条分法：忽略全部条间力</b></div>
+        <div class="formula"><code>5n−2 − 3(n−1) = 2n+1</code></div>
+        <div class="note">整个 n−1 个分界面上的 E、X、h 全部划掉，只剩 2n 个滑面反力 + 1 个 F<sub>s</sub>。这就是教材上 2n+1 的来历。</div>
+      </div>
+      <div>
+        <div class="note"><b style="color:#1e4fa8">③ 简化 Bishop：只忽略条间切向力</b></div>
+        <div class="formula"><code>5n−2 − (n−1) = 4n−1 ≈ 4n</code></div>
+        <div class="note">只划掉 X（n−1 个），保留 E 与 h。教材把 n−1 近似记为 n，于是写作「4n 个未知数、4n 个方程」。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3><span class="dot"></span>不同土条数下的计数对照（可直接抄到黑板上）</h3>
+    <table style="max-width:760px">
+      <thead><tr>
+        <th>n</th><th>通用模型 5n−2</th><th>超静定次数 n−2</th>
+        <th>瑞典法 2n+1</th><th>简化 Bishop 4n−1</th><th>方程数 4n</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>4</td><td>18</td><td style="color:#b42318">2</td><td style="color:#b42318">9</td><td style="color:#1e4fa8">15</td><td>16</td></tr>
+        <tr><td>6</td><td>28</td><td style="color:#b42318">4</td><td style="color:#b42318">13</td><td style="color:#1e4fa8">23</td><td>24</td></tr>
+        <tr><td>8</td><td>38</td><td style="color:#b42318">6</td><td style="color:#b42318">17</td><td style="color:#1e4fa8">31</td><td>32</td></tr>
+        <tr><td>10</td><td>48</td><td style="color:#b42318">8</td><td style="color:#b42318">21</td><td style="color:#1e4fa8">39</td><td>40</td></tr>
+        <tr><td>16</td><td>78</td><td style="color:#b42318">14</td><td style="color:#b42318">33</td><td style="color:#1e4fa8">63</td><td>64</td></tr>
+        <tr><td>20</td><td>98</td><td style="color:#b42318">18</td><td style="color:#b42318">41</td><td style="color:#1e4fa8">79</td><td>80</td></tr>
+      </tbody>
+    </table>
+    <div class="note" style="margin-top:8px">
+      n=10 时瑞典法只有 <b>21</b> 个未知量，却有 <b>40</b> 个方程——但真正被用到的只有 21 个，其余 19 个（各条切向平衡 10 个 + 各条力矩平衡 9 个）被放弃了，这就是它"不满足全部平衡条件"的含义。
+    </div>
+  </div>
+</section>
+
+<!-- ================= 第 3 页：公式与假定 ================= -->
+<section class="view" id="v3">
+  <div class="grid3">
+    <div class="card">
+      <h3><span class="dot"></span>三种方法的安全系数</h3>
+
+      <div class="note"><b>整体圆弧法（仅 φ=0，饱和软黏土不排水强度 c<sub>u</sub>）</b></div>
+      <div class="formula"><code>F<sub>s</sub> = c<sub>u</sub>·L·R / (W·d)</code></div>
+      <div class="note">抗滑力矩 ÷ 滑动力矩。L 为滑弧全长，d 为滑体重心到圆心的水平距离。φ≠0 时该式不成立，因为摩擦力沿弧面变化、无法整体求矩。</div>
+
+      <div class="note" style="margin-top:12px"><b>瑞典条分法（Fellenius，1927）</b></div>
+      <div class="formula"><code>F<sub>s</sub> = Σ[c·l<sub>i</sub> + (W<sub>i</sub>cosα<sub>i</sub> − u<sub>i</sub>l<sub>i</sub>)tanφ] / ΣW<sub>i</sub>sinα<sub>i</sub></code></div>
+      <div class="note">由「径向力平衡」得 N<sub>i</sub>=W<sub>i</sub>cosα<sub>i</sub>，再对圆心取整体力矩平衡。忽略条间力，结果偏保守 10%–20%。</div>
+
+      <div class="note" style="margin-top:12px"><b>简化 Bishop（1955）</b></div>
+      <div class="formula"><code>F<sub>s</sub> = Σ{[c·b<sub>i</sub> + (W<sub>i</sub>−u<sub>i</sub>b<sub>i</sub>)tanφ]/m<sub>αi</sub>} / ΣW<sub>i</sub>sinα<sub>i</sub></code></div>
+      <div class="formula"><code>m<sub>αi</sub> = cosα<sub>i</sub> + sinα<sub>i</sub>·tanφ / F<sub>s</sub></code></div>
+      <div class="note">由「竖向力平衡」求 N<sub>i</sub>，F<sub>s</sub> 出现在等式两边，需迭代。与严格解相差通常 &lt;5%。</div>
+
+      <div class="note" style="margin-top:12px"><b>简化 Janbu（补充，可用于非圆弧）</b></div>
+      <div class="formula"><code>F<sub>s</sub> = Σ[(c·b<sub>i</sub>+(W<sub>i</sub>−u<sub>i</sub>b<sub>i</sub>)tanφ)/n<sub>αi</sub>] / ΣW<sub>i</sub>tanα<sub>i</sub></code></div>
+      <div class="formula"><code>n<sub>αi</sub> = cos²α<sub>i</sub>·(1 + tanα<sub>i</sub>tanφ/F<sub>s</sub>)</code></div>
+      <div class="note">本工具按上式直接计算，未乘修正系数 f<sub>0</sub>（约 1.0），故数值略低于规范值。</div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>假定与平衡条件对照</h3>
+      <table style="font-size:12.5px">
+        <thead><tr><th style="text-align:left">方法</th><th>条间力假定</th><th>满足的平衡</th></tr></thead>
+        <tbody>
+          <tr><td style="text-align:left">整体圆弧法</td><td>整体取矩</td><td>整体力矩</td></tr>
+          <tr><td style="text-align:left">瑞典法</td><td>E=X=0</td><td>径向力 + 整体力矩</td></tr>
+          <tr><td style="text-align:left">简化 Bishop</td><td>X=0，保留 E</td><td>竖向力 + 整体力矩</td></tr>
+          <tr><td style="text-align:left">简化 Janbu</td><td>X=0，保留 E</td><td>水平力（+修正 f₀）</td></tr>
+          <tr><td style="text-align:left">Spencer / M-P</td><td>X=λf(x)E</td><td>全部力 + 力矩</td></tr>
+        </tbody>
+      </table>
+
+      <div class="qa">
+        <h5>为什么瑞典法算出来偏小（偏安全）？</h5>
+        <p>忽略条间力后 N<sub>i</sub> 只由 W<sub>i</sub>cosα<sub>i</sub> 提供，普遍小于真实值，摩擦力 tanφ 项被低估；而下滑力 ΣW sinα 不受影响，故 F<sub>s</sub> 偏小。α 越大、坡越陡，误差越大。</p>
+      </div>
+      <div class="qa">
+        <h5>为什么 φ=0 时三种方法结果相同？</h5>
+        <p>φ=0 时 m<sub>α</sub>=cosα，Bishop 式化简为 Σc·b/cosα ÷ ΣW sinα = c·L ÷ ΣW sinα，与瑞典式完全一致，也等于 c<sub>u</sub>LR/(W·d)。工具里把 φ 拖到 0 就能看到三条结果重合——这是检查程序有没有写错的好办法。</p>
+      </div>
+      <div class="qa">
+        <h5>土条数 n 取多少合适？</h5>
+        <p>教材常取 b≈0.1R，n≈10。n 太小（&lt;5）滑弧被折线化，误差可达 5% 以上；n 增大到 20 以后 F<sub>s</sub> 基本不变。可在工具里把 n 从 6 拖到 30，看结果如何收敛。</p>
+      </div>
+      <div class="qa">
+        <h5>最危险滑弧怎么找？</h5>
+        <p>圆心 (x₀,y₀) 与半径 R 三个参数构成搜索空间，逐点试算取 F<sub>s</sub> 最小。"搜索最危险滑弧"按钮做的是网格粗搜 + 局部细化，结果只作教学演示，工程上需按规范用更密的网格与多种滑面型式。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3><span class="dot"></span>课堂使用建议（约 8 分钟讲完）</h3>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px">
+      <div>
+        <div class="note"><b style="color:#0e3f8c">① 先建立"为什么条分"</b></div>
+        <div class="note">把 φ 拖到 0，三种方法结果重合，说明 φ=0 时整体力矩平衡就够了；再把 φ 提到 15°，整体圆弧法失效——必须离散成条。</div>
+      </div>
+      <div>
+        <div class="note"><b style="color:#0e3f8c">② 滑弧三个参数</b></div>
+        <div class="note">拖动圆心、滚轮改半径，让学生看着 F<sub>s</sub> 变。点"搜索最危险滑弧"，讲清"最危险"是搜出来的，不是猜出来的。</div>
+      </div>
+      <div>
+        <div class="note"><b style="color:#0e3f8c">③ n 的影响</b></div>
+        <div class="note">n 从 6 拖到 30，看 F<sub>s</sub> 收敛到稳定值；顺带说明为什么教材取 n≈10（b≈0.1R）就够用。</div>
+      </div>
+      <div>
+        <div class="note"><b style="color:#0e3f8c">④ 切到"未知数与方程"</b></div>
+        <div class="note">用三个按钮当场划掉 E、X、h，把 5n−2 一步步降到 2n+1，学生自己就能算出黑板上的数字。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* =================== CORE MATH START （纯数学，verify_core_math.js 会抽取校验） =================== */
+const DEG = Math.PI/180, RAD = 180/Math.PI;
+
+/* 坡面线：坡趾在 (0,0)，坡顶在 (m·H, H)，坡率为 1:m（水平:垂直） */
+function groundY(x, H, m){
+  if (x <= 0) return 0;
+  if (x >= m*H) return H;
+  return x/m;
+}
+
+/* 圆弧下半支 */
+function arcY(x, c){
+  const d = c.R*c.R - (x-c.xc)*(x-c.xc);
+  if (d < 0) return NaN;
+  return c.yc - Math.sqrt(d);
+}
+
+/* 找滑弧与坡面的两个交点：取「弧在坡面以下」的最长连续区间 */
+function findSpan(c, H, m){
+  const N = 900, xs = [], ds = [];
+  for (let k=0;k<=N;k++){
+    const x = c.xc - c.R + 2*c.R*k/N;
+    xs.push(x);
+    ds.push(groundY(x,H,m) - arcY(x,c));
+  }
+  let best=null, s=-1;
+  for (let k=0;k<=N;k++){
+    const ok = isFinite(ds[k]) && ds[k] > 0;
+    if (ok){
+      if (s < 0) s = k;
+      if (!best || (k-s) > (best.e-best.s)) best = {s:s, e:k};
+    } else s = -1;
+  }
+  if (!best) return null;
+  if (best.s === 0 && best.e === N) return null;      /* 整条弧都在土内：没有出口，无效 */
+  const refine = (ka, kb) => {
+    let a = xs[ka], b = xs[kb];
+    for (let i=0;i<45;i++){
+      const mid = 0.5*(a+b);
+      if (groundY(mid,H,m) - arcY(mid,c) > 0) a = mid; else b = mid;
+    }
+    return 0.5*(a+b);
+  };
+  const x1 = best.s > 0   ? refine(best.s, best.s-1) : xs[best.s];
+  const x2 = best.e < N   ? refine(best.e, best.e+1) : xs[best.e];
+  if (!(x2 > x1)) return null;
+  return {x1:x1, x2:x2};
+}
+
+/* 分条：等宽切分，逐条给出几何量 */
+function buildSlices(c, span, S){
+  const n = S.n, b = (span.x2 - span.x1)/n, out = [];
+  for (let i=0;i<n;i++){
+    const xm = span.x1 + (i+0.5)*b;
+    const yb = arcY(xm, c);
+    const yt = groundY(xm, S.H, S.m);
+    const h  = Math.max(0, yt - yb);
+    const sa = Math.max(-1, Math.min(1, (xm - c.xc)/c.R));
+    const alpha = Math.asin(sa);                 /* 条底倾角，sinα = (x−x₀)/R */
+    const l = b/Math.cos(alpha);
+    out.push({i:i, xm:xm, xa:span.x1+i*b, xb:span.x1+(i+1)*b,
+              yb:yb, yt:yt, h:h, b:b, alpha:alpha, l:l,
+              W:S.gamma*b*h, sinA:Math.sin(alpha), cosA:Math.cos(alpha)});
+  }
+  return out;
+}
+
+/* 瑞典条分法（Fellenius） */
+function fsSwedish(sl, S){
+  let num=0, den=0;
+  const t = Math.tan(S.phi*DEG);
+  for (const s of sl){
+    const U = S.ru*S.gamma*s.h*s.l;              /* 条底孔隙水压力合力 */
+    const Np = s.W*s.cosA - U;
+    num += S.c*s.l + Np*t;
+    den += s.W*s.sinA;
+  }
+  return {F: den>1e-9 ? num/den : NaN, num:num, den:den};
+}
+
+/* 简化 Bishop：Fs 出现在两边，迭代 */
+function fsBishop(sl, S){
+  const t = Math.tan(S.phi*DEG);
+  let den = 0;
+  for (const s of sl) den += s.W*s.sinA;
+  if (den <= 1e-9) return {F:NaN, it:0};
+  let F = 1.3;
+  for (let it=1; it<=80; it++){
+    let num = 0;
+    for (const s of sl){
+      const u = S.ru*S.gamma*s.h;
+      const ma = s.cosA + s.sinA*t/F;
+      num += (S.c*s.b + (s.W - u*s.b)*t)/ma;
+    }
+    const Fn = num/den;
+    const done = Math.abs(Fn-F) < 1e-9;
+    F = Fn;
+    if (done) return {F:F, it:it};
+  }
+  return {F:F, it:80};
+}
+
+/* 简化 Janbu */
+function fsJanbu(sl, S){
+  const t = Math.tan(S.phi*DEG);
+  let den = 0;
+  for (const s of sl) den += s.W*Math.tan(s.alpha);
+  if (Math.abs(den) <= 1e-9) return {F:NaN, it:0};
+  let F = 1.3;
+  for (let it=1; it<=80; it++){
+    let num = 0;
+    for (const s of sl){
+      const u = S.ru*S.gamma*s.h;
+      const na = s.cosA*s.cosA*(1 + Math.tan(s.alpha)*t/F);
+      num += (S.c*s.b + (s.W - u*s.b)*t)/na;
+    }
+    const Fn = num/den;
+    const done = Math.abs(Fn-F) < 1e-9;
+    F = Fn;
+    if (done) return {F:F, it:it};
+  }
+  return {F:F, it:80};
+}
+
+/* 整体圆弧法（φ=0）：抗滑力矩 / 滑动力矩 */
+function fsPhi0(sl, c, cu){
+  let mom=0, L=0;
+  for (const s of sl){
+    mom += s.W*(s.xm - c.xc);
+    L += s.l;
+  }
+  return {F: mom>1e-9 ? cu*L*c.R/mom : NaN, mom:mom, L:L, Mres:cu*L*c.R};
+}
+
+/* 未知量 / 方程 计数：method = general | swedish | bishop */
+function countModel(n, method){
+  const rows = [
+    {key:'N', name:'条底法向力',   sym:'Nᵢ', cnt:n},
+    {key:'T', name:'条底剪力',     sym:'Tᵢ', cnt:n},
+    {key:'E', name:'条间法向力',   sym:'Eᵢ', cnt:n-1},
+    {key:'X', name:'条间切向力',   sym:'Xᵢ', cnt:n-1},
+    {key:'h', name:'条间力作用点', sym:'hᵢ', cnt:n-1},
+    {key:'F', name:'安全系数',     sym:'Fₛ', cnt:1}
+  ];
+  const drop = method==='swedish' ? ['E','X','h'] : (method==='bishop' ? ['X'] : []);
+  const items = rows.map(r => ({key:r.key, name:r.name, sym:r.sym, cnt:r.cnt, off:drop.indexOf(r.key)>=0}));
+  let total = 0;
+  for (const it of items) if (!it.off) total += it.cnt;
+
+  const eqs = [
+    {name:'水平力平衡 ΣF<sub>x</sub> = 0', cnt:n},
+    {name:'竖直力平衡 ΣF<sub>y</sub> = 0', cnt:n},
+    {name:'力矩平衡 ΣM = 0', cnt:n},
+    {name:'强度方程 Tᵢ = (c lᵢ + Nᵢtanφ)/Fₛ', cnt:n}
+  ];
+  return {items:items, total:total, eqs:eqs, eqTotal:4*n,
+          diff: total - 4*n, drop:drop};
+}
+
+/* 未知量总数的解析式 */
+function totalExpr(n, method){
+  if (method==='swedish') return {v:2*n+1, s:'2n+1'};
+  if (method==='bishop')  return {v:4*n-1, s:'4n−1'};
+  return {v:5*n-2, s:'5n−2'};
+}
+/* =================== CORE MATH END =================== */
+
+/* ---------------------- 状态 ---------------------- */
+const S = {
+  H:10, m:1.5, gamma:18, c:20, phi:15, ru:0, n:8,
+  xc:8.25, yc:12.5, R:15,
+  sel:3, method:'bishop'
+};
+let GEO = null;      /* {c, span, slices} */
+let RES = null;
+
+const $ = id => document.getElementById(id);
+const fmt = (v,d) => (isFinite(v) ? v.toFixed(d===undefined?3:d) : '—');
+
+/* ---------------------- 计算 ---------------------- */
+function compute(){
+  const c = {xc:S.xc, yc:S.yc, R:S.R};
+  const span = findSpan(c, S.H, S.m);
+  if (!span){ GEO = null; RES = null; return false; }
+  const sl = buildSlices(c, span, S);
+  GEO = {c:c, span:span, slices:sl};
+  RES = {
+    sw: fsSwedish(sl, S),
+    bi: fsBishop(sl, S),
+    ja: fsJanbu(sl, S),
+    p0: fsPhi0(sl, c, S.c)
+  };
+  return true;
+}
+
+/* ---------------------- 绘图：边坡 + 滑弧 + 土条 ---------------------- */
+function fitCanvas(cv){
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.round(w*dpr), H = Math.round(h*dpr);
+  if (cv.width !== W || cv.height !== H){ cv.width = W; cv.height = H; }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx:ctx, w:w, h:h};
+}
+
+function drawMain(){
+  const cv = $('c1'); const f = fitCanvas(cv);
+  if (!f) return;
+  const ctx = f.ctx, W = f.w, Hh = f.h;
+  ctx.clearRect(0,0,W,Hh);
+
+  const HH = S.H, spanX = S.m*HH;
+  const xmin = -0.34*spanX - 0.1*HH, xmax = spanX + 0.52*spanX + 0.1*HH;
+  const ymin = -0.55*HH, ymax = 1.55*HH;
+  const sc = Math.min(W/(xmax-xmin), Hh/(ymax-ymin));
+  const ox = (W - (xmax-xmin)*sc)/2 - xmin*sc;
+  const oy = (Hh - (ymax-ymin)*sc)/2 + ymax*sc;
+  const X = x => ox + x*sc;
+  const Y = y => oy - y*sc;
+
+  /* 土体 */
+  ctx.beginPath();
+  ctx.moveTo(X(xmin), Y(0));
+  ctx.lineTo(X(0), Y(0));
+  ctx.lineTo(X(spanX), Y(HH));
+  ctx.lineTo(X(xmax), Y(HH));
+  ctx.lineTo(X(xmax), Y(ymin));
+  ctx.lineTo(X(xmin), Y(ymin));
+  ctx.closePath();
+  ctx.fillStyle = '#efe7d6'; ctx.fill();
+  ctx.strokeStyle = '#d9cbb0'; ctx.lineWidth = 1; ctx.stroke();
+
+  /* 坡面加粗 */
+  ctx.beginPath();
+  ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(spanX), Y(HH));
+  ctx.strokeStyle = '#8a6d3b'; ctx.lineWidth = 2.4; ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(X(xmin), Y(0)); ctx.lineTo(X(0), Y(0));
+  ctx.moveTo(X(spanX), Y(HH)); ctx.lineTo(X(xmax), Y(HH));
+  ctx.strokeStyle = '#b6a486'; ctx.lineWidth = 2; ctx.stroke();
+
+  if (!GEO){
+    ctx.fillStyle = '#b42318'; ctx.font = '600 15px "Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('当前圆弧与坡面交不出两个交点，请调整圆心或半径', W/2, Hh/2);
+    ctx.textAlign = 'start';
+    return;
+  }
+
+  const c = GEO.c, span = GEO.span, sl = GEO.slices;
+
+  /* 滑动体填充 */
+  ctx.beginPath();
+  ctx.moveTo(X(span.x1), Y(groundY(span.x1,HH,S.m)));
+  const steps = 160;
+  for (let k=0;k<=steps;k++){
+    const x = span.x1 + (span.x2-span.x1)*k/steps;
+    if (k===0) ctx.lineTo(X(x), Y(arcY(x,c)));
+    else ctx.lineTo(X(x), Y(arcY(x,c)));
+  }
+  for (let k=steps;k>=0;k--){
+    const x = span.x1 + (span.x2-span.x1)*k/steps;
+    ctx.lineTo(X(x), Y(groundY(x,HH,S.m)));
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(200,30,20,0.055)'; ctx.fill();
+
+  /* 土条分界 */
+  ctx.save();
+  ctx.strokeStyle = 'rgba(138,109,59,0.45)'; ctx.lineWidth = 1;
+  for (const s of sl){
+    ctx.beginPath();
+    ctx.moveTo(X(s.xa), Y(arcY(s.xa,c)));
+    ctx.lineTo(X(s.xa), Y(groundY(s.xa,HH,S.m)));
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(X(span.x2), Y(arcY(span.x2,c)));
+  ctx.lineTo(X(span.x2), Y(groundY(span.x2,HH,S.m)));
+  ctx.stroke();
+  ctx.restore();
+
+  /* 选中土条高亮 */
+  const ss = sl[Math.min(S.sel, sl.length-1)];
+  if (ss){
+    ctx.beginPath();
+    ctx.moveTo(X(ss.xa), Y(arcY(ss.xa,c)));
+    for (let k=0;k<=12;k++){
+      const x = ss.xa + (ss.xb-ss.xa)*k/12;
+      ctx.lineTo(X(x), Y(arcY(x,c)));
+    }
+    ctx.lineTo(X(ss.xb), Y(groundY(ss.xb,HH,S.m)));
+    ctx.lineTo(X(ss.xa), Y(groundY(ss.xa,HH,S.m)));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(30,79,168,0.16)'; ctx.fill();
+  }
+
+  /* 滑弧 */
+  ctx.beginPath();
+  for (let k=0;k<=200;k++){
+    const x = span.x1 + (span.x2-span.x1)*k/200;
+    if (k===0) ctx.moveTo(X(x), Y(arcY(x,c))); else ctx.lineTo(X(x), Y(arcY(x,c)));
+  }
+  ctx.strokeStyle = '#c81e14'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+
+  /* 圆心与半径 */
+  const cxs = X(c.xc), cys = Y(c.yc);
+  if (cxs > -40 && cxs < W+40 && cys > -40 && cys < Hh+40){
+    ctx.beginPath(); ctx.arc(cxs, cys, 5, 0, Math.PI*2);
+    ctx.fillStyle = '#c81e14'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.beginPath();
+    ctx.setLineDash([6,5]);
+    ctx.moveTo(cxs, cys); ctx.lineTo(X(span.x1), Y(arcY(span.x1,c)));
+    ctx.strokeStyle = 'rgba(200,30,20,.5)'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#8f1d18'; ctx.font = '11.5px "Microsoft YaHei",sans-serif';
+    ctx.fillText('O (x₀, y₀)', cxs+8, cys-8);
+    ctx.fillText('R = ' + c.R.toFixed(2) + ' m', (cxs+X(span.x1))/2+6, (cys+Y(arcY(span.x1,c)))/2);
+  }
+
+  /* 力箭头：N 沿内法向指向圆心、T 沿条底抵抗下滑、W 竖直向下作用于重心 */
+  const arrowAt = (x0,y0,dx,dy,len,col,wid,lbl,lox,loy) => {
+    const ex = x0 + dx*len, ey = y0 + dy*len;
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(ex,ey);
+    ctx.strokeStyle = col; ctx.lineWidth = wid; ctx.stroke();
+    const a = Math.atan2(ey-y0, ex-x0);
+    ctx.beginPath();
+    ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-7.5*Math.cos(a-0.38), ey-7.5*Math.sin(a-0.38));
+    ctx.lineTo(ex-7.5*Math.cos(a+0.38), ey-7.5*Math.sin(a+0.38));
+    ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+    if (lbl){
+      ctx.fillStyle = col; ctx.font = '600 12.5px "Microsoft YaHei",sans-serif';
+      ctx.fillText(lbl, ex + (lox===undefined?4:lox), ey + (loy===undefined?4:loy));
+    }
+  };
+
+  const step = Math.max(1, Math.round(sl.length/9));
+  for (let k=0;k<sl.length;k++){
+    const s = sl[k];
+    const isSel = (k === S.sel);
+    if (k % step !== 0 && !isSel) continue;
+
+    const sa = s.sinA, ca = s.cosA;
+    const mx = X(s.xm), my = Y(arcY(s.xm,c));
+
+    /* N：条底反力指向土体内部（滑体在圆弧内侧，故指向圆心） */
+    arrowAt(mx, my, -sa, -ca, isSel ? 46 : 36, '#1e4fa8', 1.9, isSel ? 'N' : '', -14, -6);
+
+    /* T：抗剪力与滑动方向相反（沿条底指向 +x 一侧），使土条减速 */
+    arrowAt(mx, my, ca, -sa, isSel ? 36 : 28, '#067647', 1.7, isSel ? 'T' : '', 2, 14);
+
+    /* W：自重作用于该条重心（取条高中点处的形心），竖直向下 */
+    const cyw = Y(arcY(s.xm, c) + 0.5*s.h);
+    ctx.beginPath(); ctx.arc(mx, cyw, 2.6, 0, Math.PI*2);
+    ctx.fillStyle = '#b45309'; ctx.fill();
+    const wl = Math.max(7, Math.min(36, 0.42*s.h*sc));
+    arrowAt(mx, cyw, 0, 1, wl, '#b45309', 1.7, isSel ? 'W' : '');
+  }
+
+  /* 标注 */
+  ctx.fillStyle = '#5c6b7d'; ctx.font = '12px "Microsoft YaHei",sans-serif';
+  ctx.fillText('H = ' + S.H + ' m', X(-0.30*spanX)-6, Y(HH/2));
+  ctx.strokeStyle = '#98a2b3'; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(X(xmin+0.02*spanX), Y(0)); ctx.lineTo(X(xmin+0.02*spanX), Y(HH)); ctx.stroke();
+  ctx.setLineDash([]);
+  const beta = Math.atan(1/S.m)*RAD;
+  ctx.fillText('β ≈ ' + beta.toFixed(0) + '°（1:' + S.m.toFixed(1) + '）', X(spanX*0.52), Y(HH*0.60));
+  ctx.fillStyle = '#0e3f8c'; ctx.font = '600 12.5px "Microsoft YaHei",sans-serif';
+  ctx.fillText('n = ' + sl.length + ' 条', X(span.x1)+6, Y(HH)+ -2);
+}
+
+/* ---------------------- 绘图：单条受力图 ---------------------- */
+function drawSlice(){
+  const cv = $('c2'); const f = fitCanvas(cv);
+  if (!f) return;
+  const ctx = f.ctx, W = f.w, Hh = f.h;
+  ctx.clearRect(0,0,W,Hh);
+  if (!GEO) return;
+  const s = GEO.slices[Math.min(S.sel, GEO.slices.length-1)];
+  if (!s) return;
+
+  const cx = W*0.5, cy = Hh*0.64;
+  const wid = Math.min(168, W*0.30), hgt = Math.min(160, Hh*0.60);
+  const ang = -s.alpha;                    /* 屏幕 y 向下，条底右端向下倾 */
+  const dx = Math.cos(ang), dy = Math.sin(ang);
+  const nx = -dy, ny = dx;
+
+  /* 四边形 */
+  const bl = [cx - dx*wid/2, cy - dy*wid/2];
+  const br = [cx + dx*wid/2, cy + dy*wid/2];
+  const tr = [br[0] - nx*hgt, br[1] - ny*hgt];
+  const tl = [bl[0] - nx*hgt, bl[1] - ny*hgt];
+  ctx.beginPath();
+  ctx.moveTo(tl[0],tl[1]); ctx.lineTo(tr[0],tr[1]);
+  ctx.lineTo(br[0],br[1]); ctx.lineTo(bl[0],bl[1]);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(138,109,59,0.13)'; ctx.fill();
+  ctx.strokeStyle = '#8a6d3b'; ctx.lineWidth = 1.6; ctx.stroke();
+
+  const arrow = (x1,y1,x2,y2,col,dash,lbl)=>{
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    ctx.strokeStyle = col; ctx.lineWidth = 2; if (dash) ctx.setLineDash([5,4]);
+    ctx.stroke(); ctx.setLineDash([]);
+    const a = Math.atan2(y2-y1, x2-x1);
+    ctx.beginPath(); ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-8*Math.cos(a-0.36), y2-8*Math.sin(a-0.36));
+    ctx.lineTo(x2-8*Math.cos(a+0.36), y2-8*Math.sin(a+0.36));
+    ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+    if (lbl){
+      ctx.fillStyle = col; ctx.font = '600 12px "Microsoft YaHei",sans-serif';
+      ctx.fillText(lbl, x2 + (x2>x1?4:-22), y2 + (y2>y1?12:-4));
+    }
+  };
+
+  const mid = [cx, cy];
+  const ctr = [cx - nx*hgt*0.5, cy - ny*hgt*0.5];      /* 重心：条底中点沿内法向上移 h/2 */
+  /* W：作用于重心，竖直向下 */
+  ctx.beginPath(); ctx.arc(ctr[0], ctr[1], 2.6, 0, Math.PI*2);
+  ctx.fillStyle = '#b45309'; ctx.fill();
+  arrow(ctr[0], ctr[1], ctr[0], ctr[1]+hgt*0.46, '#b45309', false, 'W');
+  /* N：条底反力，沿内法向指向圆心 */
+  arrow(mid[0], mid[1], mid[0]-nx*46, mid[1]-ny*46, '#1e4fa8', false, 'N');
+  /* T：抗剪力，沿条底与滑动方向相反 */
+  arrow(mid[0], mid[1], mid[0]+dx*46, mid[1]+dy*46, '#067647', false, 'T');
+
+  const swedish = (S.method === 'swedish');
+  /* E（水平条间力）：自土条外侧指向侧面，表示相邻土条压在本条上 */
+  const yE = tl[1] + hgt*0.28;
+  arrow(tl[0]-44, yE, tl[0], yE, swedish?'#c3cbd8':'#2563eb', swedish, 'E');
+  arrow(tr[0]+44, yE, tr[0], yE, swedish?'#c3cbd8':'#2563eb', swedish, 'E′');
+  /* X（竖直，切向） */
+  arrow(tl[0]-14, tl[1]+hgt*0.15, tl[0]-14, tl[1]-16, (swedish||S.method==='bishop')?'#c3cbd8':'#7c3aed', true, 'X');
+  arrow(tr[0]+14, tr[1]+hgt*0.15, tr[0]+14, tr[1]-16, (swedish||S.method==='bishop')?'#c3cbd8':'#7c3aed', true, "X′");
+
+  ctx.fillStyle = '#5c6b7d'; ctx.font = '12px "Microsoft YaHei",sans-serif';
+  ctx.fillText('条 ' + (s.i+1) + '：α = ' + (s.alpha*RAD).toFixed(1) + '°，b = ' + s.b.toFixed(2) + ' m，W = ' + s.W.toFixed(0) + ' kN/m', 10, Hh-10);
+  if (swedish){
+    ctx.fillStyle = '#c81e14';
+    ctx.fillText('瑞典法：E、X 均取 0（灰色虚线）', 10, 18);
+  } else if (S.method === 'bishop'){
+    ctx.fillStyle = '#1e4fa8';
+    ctx.fillText('简化 Bishop：X = 0，保留 E', 10, 18);
+  }
+}
+
+/* ---------------------- 刷新界面 ---------------------- */
+function refresh(){
+  const ok = compute();
+  $('vH').textContent = S.H.toFixed(1) + ' m';
+  $('vM').textContent = '1:' + S.m.toFixed(1);
+  $('vG').textContent = S.gamma.toFixed(1);
+  $('vC').textContent = S.c.toFixed(0) + ' kPa';
+  $('vP').textContent = S.phi.toFixed(0) + '°';
+  $('vR').textContent = S.ru.toFixed(2);
+  $('vN').textContent = S.n;
+  $('vX').textContent = S.xc.toFixed(1);
+  $('vY').textContent = S.yc.toFixed(1);
+  $('vRad').textContent = S.R.toFixed(1);
+
+  drawMain();
+
+  const box = $('res');
+  if (!ok || !RES){
+    box.innerHTML = '<div class="note" style="color:#b42318">圆弧无效：与坡面没有两个交点，请调整圆心或半径。</div>';
+    $('resNote').textContent = '';
+    $('tbl').querySelector('tbody').innerHTML = '';
+    drawSlice();
+    return;
+  }
+
+  const phiZero = Math.abs(S.phi) < 1e-9;
+  const rows = [
+    {k:'p0', nm:'整体圆弧法', em:'φ=0 专用', v:RES.p0.F, na:!phiZero},
+    {k:'sw', nm:'瑞典条分法', em:'Fellenius', v:RES.sw.F, na:false},
+    {k:'bi', nm:'简化 Bishop', em:'迭代 ' + RES.bi.it + ' 次', v:RES.bi.F, na:false},
+    {k:'ja', nm:'简化 Janbu', em:'补充', v:RES.ja.F, na:false}
+  ];
+  box.innerHTML = rows.map(r=>{
+    const on = (r.k===S.method) ? ' on' : '';
+    if (r.na) return '<div class="item'+on+'"><div class="nm">'+r.nm+'<em>'+r.em+'</em><span class="tag na">φ≠0 不适用</span></div><div class="fs warnc">需 φ=0</div></div>';
+    const tag = (r.v>=1.0) ? '<span class="tag ok">稳定</span>' : '<span class="tag no">不满足</span>';
+    return '<div class="item'+on+'"><div class="nm">'+r.nm+'<em>'+r.em+'</em>'+tag+'</div><div class="fs">'+fmt(r.v)+'</div></div>';
+  }).join('');
+
+  /* 结果说明 */
+  const d = (RES.bi.F - RES.sw.F);
+  $('resNote').innerHTML = phiZero
+    ? '当前 φ=0：三种方法的 <b>F<sub>s</sub> 完全相同</b>（' + fmt(RES.sw.F) + '），这是检验程序正确性的一个好办法。'
+    : 'Bishop 比瑞典法大 <b>' + (isFinite(d)?d.toFixed(3):'—') + '</b>（' + (isFinite(d)&&RES.sw.F>0 ? (100*d/RES.sw.F).toFixed(1) : '—') + '%），差别来自条间力的处理方式。';
+
+  /* 土条表 */
+  const tb = $('tbl').querySelector('tbody');
+  tb.innerHTML = GEO.slices.map((s,i)=>{
+    const U = S.ru*S.gamma*s.h*s.l;
+    const Np = s.W*s.cosA - U;
+    const Tf = S.c*s.l + Np*Math.tan(S.phi*DEG);
+    return '<tr class="'+(i===S.sel?'sel':'')+'" data-i="'+i+'">'+
+      '<td>'+(i+1)+'</td><td>'+s.b.toFixed(2)+'</td><td>'+s.h.toFixed(2)+'</td>'+
+      '<td>'+s.W.toFixed(1)+'</td><td>'+(s.alpha*RAD).toFixed(1)+'</td>'+
+      '<td>'+s.l.toFixed(2)+'</td><td>'+Np.toFixed(1)+'</td><td>'+Tf.toFixed(1)+'</td>'+
+      '<td>'+(s.W*s.sinA).toFixed(1)+'</td></tr>';
+  }).join('');
+
+  $('selNo').textContent = String(Math.min(S.sel, GEO.slices.length-1)+1);
+  drawSlice();
+}
+
+/* ---------------------- 第 2 页 ---------------------- */
+let M2 = 'swedish';
+function refreshCount(){
+  const n = S.n;
+  const mdl = countModel(n, M2);
+  const te = totalExpr(n, M2);
+
+  $('klist').innerHTML = mdl.items.map(it=>{
+    const cls = it.off ? 'krow off' : 'krow';
+    const cnt = it.off ? '0' : String(it.cnt);
+    return '<div class="'+cls+'"><span>'+it.name+'</span><span class="sym">'+it.sym+'</span><span class="cnt">'+cnt+'</span></div>';
+  }).join('');
+
+  $('elist').innerHTML = mdl.eqs.map(e=>
+    '<div class="krow"><span>'+e.name+'</span><span class="sym">×</span><span class="cnt">'+e.cnt+'</span></div>'
+  ).join('');
+
+  $('unkTotal').textContent = mdl.total;
+  $('unkExpr').textContent = te.s + ' = ' + mdl.total + '（n = ' + n + '）';
+  $('eqTotal').textContent = mdl.eqTotal;
+  $('eqExpr').textContent = '4n = ' + mdl.eqTotal + '（n = ' + n + '）';
+  $('sumTxt').textContent = te.s + ' = ' + mdl.total;
+  $('eqSumTxt').textContent = '4n = ' + mdl.eqTotal;
+
+  const box = $('statusBox');
+  if (M2 === 'general'){
+    box.className = 'status red';
+    box.innerHTML = '未知量 <b>' + mdl.total + '</b> 个，方程 <b>' + mdl.eqTotal + '</b> 个，' +
+      '差 <b>' + (mdl.total-mdl.eqTotal) + '</b> 个 → <b>超静定 ' + (n-2) + ' 次</b>。必须补充 n−2 个假定才能求解。';
+  } else if (M2 === 'swedish'){
+    box.className = 'status amber';
+    box.innerHTML = '忽略全部条间力后只剩 <b>2n+1 = ' + mdl.total + '</b> 个未知量。' +
+      '但 4n = ' + mdl.eqTotal + ' 个方程中真正被用到的只有 <b>2n+1 个</b>（n 条径向平衡 + n 个强度方程 + 1 个整体力矩），' +
+      '其余 <b>' + (mdl.eqTotal-mdl.total) + '</b> 个（各条切向平衡与力矩平衡）被放弃 —— 这就是误差来源。';
+  } else {
+    box.className = 'status green';
+    box.innerHTML = '只划掉条间切向力 X 后剩 <b>4n−1 = ' + mdl.total + '</b> 个未知量，与 4n = ' + mdl.eqTotal + ' 个方程<b>数目相当</b>，故称静定。' +
+      '更本质地看：X=0 时 E 不出现在竖向平衡里，真正参与求解的是 N、T、F<sub>s</sub> 共 2n+1 个，正好对应 2n+1 个方程。';
+  }
+}
+
+/* ---------------------- 交互 ---------------------- */
+function bindRange(id, key, after){
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('input', ()=>{
+    S[key] = parseFloat(el.value);
+    if (after) after();
+    refresh();
+  });
+}
+
+function init(){
+  /* 标签页 */
+  const tabs = document.querySelectorAll('.tab');
+  for (let i=0;i<tabs.length;i++){
+    (function(t){
+      t.addEventListener('click', ()=>activate(t.dataset.v));
+    })(tabs[i]);
+  }
+
+  bindRange('sH','H', ()=>{ S.xc = 0.55*S.m*S.H; S.yc = 1.25*S.H; S.R = Math.hypot(S.xc,S.yc); syncCircle(); });
+  bindRange('sM','m', ()=>{ S.xc = 0.55*S.m*S.H; S.R = Math.hypot(S.xc,S.yc); syncCircle(); });
+  bindRange('sG','gamma');
+  bindRange('sC','c');
+  bindRange('sP','phi');
+  bindRange('sR','ru');
+  bindRange('sN','n', ()=>{ S.n = Math.round(S.n); if (S.sel >= S.n) S.sel = S.n-1; });
+  bindRange('sX','xc');
+  bindRange('sY','yc');
+  bindRange('sRad','R');
+
+  const n2 = $('sN2');
+  n2.addEventListener('input', ()=>{
+    S.n = parseInt(n2.value,10);
+    $('vN2').textContent = S.n;
+    $('sN').value = S.n; $('vN').textContent = S.n;
+    if (S.sel >= S.n) S.sel = S.n-1;
+    refreshCount(); refresh();
+  });
+
+  const mbtns = document.querySelectorAll('.methodsel button');
+  for (let i=0;i<mbtns.length;i++){
+    (function(b){
+      b.addEventListener('click', ()=>{
+        M2 = b.dataset.mm;
+        for (let k=0;k<mbtns.length;k++) mbtns[k].className = (mbtns[k]===b)?'on':'';
+        S.method = M2;
+        refreshCount(); refresh();
+      });
+    })(mbtns[i]);
+  }
+
+  $('btnReset').addEventListener('click', ()=>{
+    S.H=10; S.m=1.5; S.gamma=18; S.c=20; S.phi=15; S.ru=0; S.n=8;
+    S.xc=0.55*S.m*S.H; S.yc=1.25*S.H; S.R=Math.hypot(S.xc,S.yc);
+    S.sel=3;
+    setSliders(); syncCircle(); refresh(); refreshCount();
+  });
+
+  $('btnSearch').addEventListener('click', searchWorst);
+
+  /* 表格行选择 */
+  $('tbl').addEventListener('click', (e)=>{
+    const tr = e.target.closest ? e.target.closest('tr') : null;
+    if (!tr || !tr.dataset || tr.dataset.i===undefined) return;
+    S.sel = parseInt(tr.dataset.i,10);
+    refresh();
+  });
+
+  /* 画布拖动圆心 + 滚轮改半径 */
+  const cv = $('c1');
+  let dragging = false, lastX = 0, lastY = 0;
+  cv.addEventListener('pointerdown', (e)=>{
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    cv.classList.add('drag');
+    if (cv.setPointerCapture) cv.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  cv.addEventListener('pointermove', (e)=>{
+    if (!dragging) return;
+    const sc = cv.clientWidth / 900;             /* 近似的像素-米比例 */
+    const dx = (e.clientX - lastX)/sc*0.55;
+    const dy = -(e.clientY - lastY)/sc*0.55;
+    S.xc = Math.max(-20, S.xc + dx);
+    S.yc = Math.max(1,  S.yc + dy);
+    lastX = e.clientX; lastY = e.clientY;
+    syncCircle(); refresh();
+  });
+  cv.addEventListener('pointerup', ()=>{ dragging = false; cv.classList.remove('drag'); });
+  cv.addEventListener('pointercancel', ()=>{ dragging = false; cv.classList.remove('drag'); });
+  cv.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    const k = e.deltaY > 0 ? 1.04 : 1/1.04;
+    S.R = Math.max(2, Math.min(200, S.R*k));
+    syncCircle(); refresh();
+  }, {passive:false});
+
+  /* 深链接：#v1/#v2/#v3 */
+  const h = (window.location && window.location.hash) ? window.location.hash.replace('#','') : '';
+  activate(h==='v2'||h==='v3' ? h : 'v1');
+
+  setSliders(); syncCircle(); refresh(); refreshCount();
+}
+
+function syncCircle(){
+  if ($('sX')) { $('sX').value = S.xc; $('sY').value = S.yc; $('sRad').value = S.R; }
+  if ($('sX')) { $('sX').max = Math.max(45, Math.round(S.m*S.H*2)); $('sY').max = Math.max(40, Math.round(S.H*3)); $('sRad').max = Math.max(50, Math.round(S.H*5)); }
+}
+
+function setSliders(){
+  $('sH').value = S.H; $('sM').value = S.m; $('sG').value = S.gamma;
+  $('sC').value = S.c; $('sP').value = S.phi; $('sR').value = S.ru; $('sN').value = S.n;
+  $('sN2').value = S.n; $('vN2').textContent = S.n;
+}
+
+function activate(id){
+  const tabs = document.querySelectorAll('.tab');
+  const views = document.querySelectorAll('.view');
+  for (let i=0;i<tabs.length;i++) tabs[i].className = (tabs[i].dataset.v===id) ? 'tab on' : 'tab';
+  for (let i=0;i<views.length;i++) views[i].className = (views[i].id===id) ? 'view on' : 'view';
+  setTimeout(()=>{
+    if (id==='v1'){ refresh(); }
+    if (id==='v2'){ refreshCount(); }
+  }, 0);
+  if (window.requestAnimationFrame) requestAnimationFrame(()=>{ if (id==='v1') refresh(); });
+}
+
+/* 最危险滑弧：粗网格 + 局部细化（目标函数用 Bishop，稳定且与工程习惯接近） */
+function searchWorst(){
+  const H = S.H, m = S.m;
+  const R0 = (0.9*S.yc + 1.0*H);
+  let best = {F:Infinity};
+  const evalAt = (xc,yc,R)=>{
+    const c0 = {xc:xc, yc:yc, R:R};
+    const sp = findSpan(c0, H, m);
+    if (!sp) return Infinity;
+    const sl = buildSlices(c0, sp, S);
+    if (sl.length < 3) return Infinity;
+    const d = fsBishop(sl, S).F;
+    return isFinite(d) ? d : Infinity;
+  };
+  for (let i=0;i<10;i++){
+    const xc = (-0.1 + 1.35*i/9)*m*H;
+    for (let j=0;j<8;j++){
+      const yc = (0.85 + 0.75*j/7)*H;
+      for (let k=0;k<8;k++){
+        const R = (0.65 + 0.62*k/7)*Math.hypot(xc, yc) + 0.15*H;
+        const F = evalAt(xc,yc,R);
+        if (F < best.F) best = {F:F, xc:xc, yc:yc, R:R};
+      }
+    }
+  }
+  if (!isFinite(best.F)) return;
+  /* 局部细化 */
+  let step = 0.08*H;
+  for (let pass=0; pass<3; pass++){
+    const b0 = {xc:best.xc, yc:best.yc, R:best.R};
+    for (let a=-1;a<=1;a++) for (let b=-1;b<=1;b++) for (let d=-1;d<=1;d++){
+      const xc = b0.xc + a*step, yc = b0.yc + b*step, R = b0.R + d*step*1.4;
+      if (R < 2) continue;
+      const F = evalAt(xc,yc,R);
+      if (F < best.F) best = {F:F, xc:xc, yc:yc, R:R};
+    }
+    step *= 0.42;
+  }
+  S.xc = best.xc; S.yc = best.yc; S.R = best.R;
+  syncCircle(); refresh();
+}
+
+if (document.readyState === 'loading'){
+  window.addEventListener('load', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
