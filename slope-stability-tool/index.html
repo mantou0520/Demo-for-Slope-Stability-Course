@@ -65,11 +65,17 @@
   .card{background:#fff; border:1px solid var(--line); border-radius:10px; padding:11px 13px}
   .card h3{margin:0 0 8px; font-size:13.5px; color:var(--navy); display:flex; align-items:center; gap:7px}
   .card h3 .dot{width:4px; height:14px; background:var(--blue2); border-radius:2px}
-  .row{display:grid; grid-template-columns:66px 1fr 52px; align-items:center; gap:8px; margin:5px 0}
+  .row{display:grid; grid-template-columns:66px 1fr 58px; align-items:center; gap:8px; margin:5px 0}
   .row label{font-size:12.5px; color:var(--muted); white-space:nowrap}
   .row input[type=range]{width:100%; accent-color:var(--blue2); height:18px}
   .row .val{font-size:12.5px; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink)}
   .row .val small{color:var(--muted)}
+  .row .num{
+    width:100%; font-family:inherit; font-size:12px; text-align:right;
+    padding:3px 5px; border:1px solid var(--line2); border-radius:5px;
+    color:var(--ink); background:#fff; font-variant-numeric:tabular-nums;
+  }
+  .row .num:focus{outline:none; border-color:var(--blue2); box-shadow:0 0 0 2px rgba(61,123,217,.15)}
 
   .res{display:flex; flex-direction:column; gap:6px}
   .res .item{
@@ -138,6 +144,31 @@
   .qa{border-top:1px dashed var(--line2); padding-top:9px; margin-top:9px}
   .qa h5{margin:0 0 3px; font-size:13px; color:var(--navy)}
   .qa p{margin:0; font-size:12.8px; color:#3b4a5c; line-height:1.75}
+
+  /* ---------- 第 4 页：推导 ---------- */
+  .step{display:flex; gap:10px; margin:10px 0}
+  .step .no{
+    width:21px; height:21px; border-radius:50%; flex:none; margin-top:1px;
+    background:var(--blue); color:#fff; font-size:11.5px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step .bd{flex:1; min-width:0}
+  .step .bd .t{font-size:13px; font-weight:700; color:var(--ink)}
+  .step .bd .f{
+    margin:5px 0 0; padding:6px 10px; background:#f4f8ff; border-left:2px solid var(--blue2);
+    border-radius:0 4px 4px 0; font-family:"Cambria Math",Georgia,serif;
+    font-size:13.3px; color:#12325e; line-height:1.85; overflow-x:auto;
+  }
+  .step .bd .n2{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.65}
+  .key{
+    margin:9px 0; padding:8px 11px; background:#fff8e6; border:1px solid #f0d9a8;
+    border-radius:6px; font-size:12.6px; color:#7a4a00; line-height:1.75;
+  }
+  .key b{color:#a15c00}
+  .lead{
+    background:var(--sand); border:1px solid var(--line); border-radius:8px;
+    padding:11px 13px; font-size:12.8px; color:#33465c; line-height:1.9;
+  }
   @media (max-width:1180px){
     .grid1{grid-template-columns:1fr}
     .col-right{max-height:none}
@@ -157,6 +188,7 @@
     <div class="tab on" data-v="v1">① 计算演示</div>
     <div class="tab" data-v="v2">② 未知数与方程</div>
     <div class="tab" data-v="v3">③ 公式与假定</div>
+    <div class="tab" data-v="v4">④ 公式推导</div>
   </nav>
 </header>
 
@@ -206,9 +238,9 @@
 
       <div class="card">
         <h3><span class="dot"></span>滑弧位置</h3>
-        <div class="row"><label>圆心 x₀</label><input id="sX" type="range" min="-5" max="45" step="0.25" value="8.25"><div class="val" id="vX">8.3</div></div>
-        <div class="row"><label>圆心 y₀</label><input id="sY" type="range" min="2" max="40" step="0.25" value="12.5"><div class="val" id="vY">12.5</div></div>
-        <div class="row"><label>半径 R</label><input id="sRad" type="range" min="3" max="50" step="0.25" value="15"><div class="val" id="vRad">15.0</div></div>
+        <div class="row"><label>圆心 x₀</label><input id="sX" type="range" min="-8" max="45" step="0.1" value="8.25"><input class="num" id="nX" type="number" step="0.1" value="8.25"></div>
+        <div class="row"><label>圆心 y₀</label><input id="sY" type="range" min="2" max="40" step="0.1" value="12.5"><input class="num" id="nY" type="number" step="0.1" value="12.5"></div>
+        <div class="row"><label>半径 R</label><input id="sRad" type="range" min="3" max="50" step="0.1" value="15"><input class="num" id="nRad" type="number" step="0.1" value="15"></div>
         <div class="btns">
           <button id="btnSearch" class="pri">搜索最危险滑弧</button>
           <button id="btnReset">恢复默认</button>
@@ -410,6 +442,180 @@
 
 </main>
 
+<!-- ================= 第 4 页：公式推导 ================= -->
+<section class="view" id="v4">
+  <div class="lead" style="margin-bottom:14px">
+    <b style="color:#0e3f8c">共同起点（三种方法都从这同一个受力图出发）</b><br>
+    取第 <i>i</i> 个土条。作用力：自重 <b>W</b>、条底有效法向力 <b>N′</b>、孔隙水压力合力 <b>U = u·l</b>、条底剪力 <b>T</b>、
+    条间法向力 <b>E</b>、条间切向力 <b>X</b>。<br>
+    可列 4 个方程：ΣF<sub>x</sub> = 0、ΣF<sub>y</sub> = 0、ΣM = 0、强度方程 T = (c′l + N′tanφ′)/F。<br>
+    三种方法的区别只有<b>两处</b>，其余完全相同：<br>
+    ① <b>沿哪个方向投影</b>求 N′ —— 瑞典法沿<b>条底法向</b>，Bishop／Janbu 沿<b>竖直方向</b>；<br>
+    ② <b>用哪个整体平衡方程收尾</b> —— 瑞典、Bishop 用<b>对圆心取矩</b>，Janbu 用<b>水平力平衡</b>。
+  </div>
+
+  <!-- 瑞典条分法 -->
+  <div class="card" style="margin-bottom:14px">
+    <h3><span class="dot"></span>瑞典条分法（Fellenius 1927）：先把条间力"关掉"，三步到底</h3>
+    <div class="note" style="margin-bottom:2px">
+      假定 <b>E = X = 0</b>：n−1 个分界面上的 3 个未知量一次全部划掉，未知量从 5n−2 降到 2n+1。
+    </div>
+    <div style="display:grid; grid-template-columns:1fr .95fr 1.22fr; gap:18px; margin-top:8px">
+
+      <div class="step"><div class="no">1</div><div class="bd">
+        <div class="t">沿<b>条底法向</b>投影求 N′</div>
+        <div class="f">N = W·cosα</div>
+        <div class="f">N′ = N − u·l = W·cosα − u·l</div>
+        <div class="n2">T 垂直于条底，在这个方向上分量为 0，所以式子里<b>不出现 F</b>。</div>
+      </div></div>
+
+      <div class="step"><div class="no">2</div><div class="bd">
+        <div class="t">强度方程</div>
+        <div class="f">T = (c′l + N′·tanφ′) / F</div>
+        <div class="n2">把 ① 的 N′ 直接代入即可，无需求解方程。</div>
+      </div></div>
+
+      <div class="step"><div class="no">3</div><div class="bd">
+        <div class="t">对圆心取整体力矩平衡</div>
+        <div class="f">ΣT·R = ΣW·R·sinα　→　ΣT = ΣW·sinα</div>
+        <div class="f">F = Σ[c′l + (W·cosα − u·l)tanφ′] / ΣW·sinα</div>
+        <div class="n2">一次算完，<b>不需要迭代</b>。</div>
+      </div></div>
+    </div>
+
+    <div class="key" style="margin-bottom:0">
+      <b>关键一句：投影方向决定了要不要迭代。</b>
+      沿条底法向投影时 T 的分量为零，N′ 里没有 F，可以单独解出；
+      Bishop 改沿竖直方向投影，T 的竖直分量 T·sinα 进来了，F 就混进 N′，只能迭代。
+      <br>代价是瑞典法把条间力全部丢掉：实际条间力一般会<b>增大</b>条底法向力，忽略后 N′ 偏小、摩擦力被低估，
+      所以 F 比严格解小 10%–20%（偏安全）。
+    </div>
+  </div>
+
+  <div class="grid3">
+    <!-- Bishop -->
+    <div class="card">
+      <h3><span class="dot"></span>简化 Bishop（1955）：走"整体力矩"这条路</h3>
+
+      <div class="step"><div class="no">1</div><div class="bd">
+        <div class="t">沿<b>竖直方向</b>投影（不是条底法向）</div>
+        <div class="f">N′·cosα + u·l·cosα + T·sinα = W</div>
+        <div class="n2">与瑞典法唯一的差别就在这里：改投影方向后 T 的分量 T·sinα 进来了。又因 l·cosα = b，孔压项 u·l·cosα = u·b。</div>
+      </div></div>
+
+      <div class="step"><div class="no">2</div><div class="bd">
+        <div class="t">强度方程（把 T 与 N′、F 绑起来）</div>
+        <div class="f">T = (c′l + N′·tanφ′) / F</div>
+      </div></div>
+
+      <div class="step"><div class="no">3</div><div class="bd">
+        <div class="t">把 T 代回竖向平衡，解出 N′</div>
+        <div class="f">N′·cosα + [(c′l + N′tanφ′)/F]·sinα = W − u·b</div>
+        <div class="f">N′·[cosα + sinα·tanφ′/F] = W − u·b − c′l·sinα/F</div>
+        <div class="f">N′ = (W − u·b − c′l·sinα/F) / m<sub>α</sub></div>
+        <div class="n2">其中 m<sub>α</sub> = cosα + sinα·tanφ′/F，称为"修正系数"。</div>
+      </div></div>
+
+      <div class="step"><div class="no">4</div><div class="bd">
+        <div class="t">把 N′ 回代求 T</div>
+        <div class="f">T = (c′l + N′tanφ′)/F = [c′b + (W − u·b)·tanφ′] / (F·m<sub>α</sub>)</div>
+      </div></div>
+
+      <div class="key">
+        <b>关键一步（教材最常跳过的地方）</b>：把 N′ 代入后分子通分，得
+        <br>c′l·m<sub>α</sub> + (W−u·b)tanφ′ − c′l·sinα·tanφ′/F
+        <br>把 m<sub>α</sub> 展开：c′l·m<sub>α</sub> − c′l·sinα·tanφ′/F = c′l·cosα = <b>c′b</b>。
+        <br>那两项正好抵消，<b>c′l 就这样变成了 c′b</b>——分母上的 F 也随之提出去。
+      </div>
+
+      <div class="step"><div class="no">5</div><div class="bd">
+        <div class="t">对圆心取整体力矩平衡（滑体两端 E 成对抵消）</div>
+        <div class="f">ΣT·R = ΣW·R·sinα　→　ΣT = ΣW·sinα</div>
+        <div class="f">F = Σ{ [c′b + (W − u·b)tanφ′] / m<sub>α</sub> } / ΣW·sinα</div>
+        <div class="n2">F 同时出现在 m<sub>α</sub> 里，无法直接解出，必须迭代。</div>
+      </div></div>
+    </div>
+
+    <!-- Janbu -->
+    <div class="card">
+      <h3><span class="dot"></span>简化 Janbu（1954）：走"水平力"这条路</h3>
+
+      <div class="step"><div class="no">1</div><div class="bd">
+        <div class="t">同样假定 ΔX = 0</div>
+        <div class="n2">到这一步为止，与 Bishop 完全一样。分岔从下一步的收尾方程开始。</div>
+      </div></div>
+
+      <div class="step"><div class="no">2</div><div class="bd">
+        <div class="t">竖向平衡直接解出"总法向力" N</div>
+        <div class="f">N·cosα + T·sinα = W　→　N = (W − T·sinα)/cosα</div>
+        <div class="n2">N 是总法向力，N = N′ + u·l。孔压已并入 N，式子里不再单独出现——这是与 Bishop 写法上的差别，实质相同。</div>
+      </div></div>
+
+      <div class="step"><div class="no">3</div><div class="bd">
+        <div class="t">对整个滑体列水平力平衡</div>
+        <div class="f">Σ(E<sub>i+1</sub> − E<sub>i</sub>) + Σ(T·cosα − N·sinα) = 0</div>
+        <div class="n2">滑体左右两端没有条间力，ΣΔE = 0，于是：</div>
+        <div class="f">ΣT·cosα = ΣN·sinα</div>
+      </div></div>
+
+      <div class="step"><div class="no">4</div><div class="bd">
+        <div class="t">代入 N，用三角恒等式化简</div>
+        <div class="f">ΣT·cosα = Σ(W − T·sinα)·tanα</div>
+        <div class="f">ΣT·(cosα + sinα·tanα) = ΣW·tanα</div>
+        <div class="f">ΣT / cosα = ΣW·tanα</div>
+      </div></div>
+
+      <div class="key">
+        <b>关键一步</b>：cosα + sinα·tanα = (cos²α + sin²α)/cosα = <b>1/cosα</b>。
+        <br>分母从 ΣW·sinα 变成 ΣW·tanα，就是这一行变出来的。
+      </div>
+
+      <div class="step"><div class="no">5</div><div class="bd">
+        <div class="t">代入 T 的表达式（与 Bishop 的 ④ 相同）</div>
+        <div class="f">T = [c′b + (W−u·b)tanφ′]/(F·m<sub>α</sub>)，而 m<sub>α</sub> = n<sub>α</sub>/cosα</div>
+        <div class="f">F = Σ{ [c′b + (W−u·b)tanφ′] / n<sub>α</sub> } / ΣW·tanα</div>
+        <div class="f">n<sub>α</sub> = cos²α·(1 + tanα·tanφ′/F)</div>
+        <div class="n2">同样要迭代；工程上最后再乘修正系数 f<sub>0</sub>（圆弧时 f<sub>0</sub> ≈ 1）。</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3><span class="dot"></span>三种方法对照：两处差别，一张表说清</h3>
+    <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:18px">
+      <table style="font-size:12.6px">
+        <thead><tr>
+          <th style="text-align:left">对比项</th><th>瑞典 Fellenius</th><th>简化 Bishop</th><th>简化 Janbu</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="text-align:left">条间力假定</td><td>E = X = 0</td><td>ΔX = 0（留 E）</td><td>ΔX = 0（留 E）</td></tr>
+          <tr><td style="text-align:left">求 N′ 的投影方向</td><td><b>条底法向</b></td><td>竖直方向</td><td>竖直方向</td></tr>
+          <tr><td style="text-align:left">N′ 是否含 F</td><td style="color:#067647">不含，可直接算</td><td style="color:#b45309">含，需迭代</td><td style="color:#b45309">含，需迭代</td></tr>
+          <tr><td style="text-align:left">收尾的平衡方程</td><td>整体力矩</td><td>整体力矩</td><td><b>水平力</b></td></tr>
+          <tr><td style="text-align:left">分母</td><td>ΣW·sinα</td><td>ΣW·sinα</td><td>ΣW·tanα</td></tr>
+          <tr><td style="text-align:left">分子系数</td><td>无</td><td>m<sub>α</sub></td><td>n<sub>α</sub> = m<sub>α</sub>·cosα</td></tr>
+          <tr><td style="text-align:left">适用滑面</td><td>只能圆弧</td><td>只能圆弧</td><td>圆弧、折线均可</td></tr>
+          <tr><td style="text-align:left">精度</td><td style="color:#b42318">偏小 10%–20%</td><td style="color:#067647">差 &lt;5%</td><td>偏低，乘 f<sub>0</sub> 后接近</td></tr>
+        </tbody>
+      </table>
+      <div>
+        <div class="qa" style="border-top:none; padding-top:0; margin-top:0">
+          <h5>为什么瑞典法不用迭代，Bishop 要迭代？</h5>
+          <p>只差在投影方向：沿条底法向投影时 T 分量为零，N′ 只与 W、u 有关；改沿竖直方向，T 的分量 T·sinα 进入方程，把 F 带了进来。</p>
+        </div>
+        <div class="qa">
+          <h5>为什么 Bishop 只能算圆弧？</h5>
+          <p>整体取矩时每个土条 T 的力臂恰好都是 R，可提到求和号外、两边约掉。非圆弧时力臂各异，这一步做不下去。</p>
+        </div>
+        <div class="qa">
+          <h5>为什么 Bishop 与 Janbu 会差 10%？</h5>
+          <p>力矩方程各条权重是 sinα，水平力方程是 tanα。α 大时 tanα 放大快，Janbu 对深滑弧偏低——这正是要乘 f<sub>0</sub> 的原因。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <script>
 /* =================== CORE MATH START （纯数学，verify_core_math.js 会抽取校验） =================== */
 const DEG = Math.PI/180, RAD = 180/Math.PI;
@@ -445,7 +651,9 @@ function findSpan(c, H, m){
     } else s = -1;
   }
   if (!best) return null;
-  if (best.s === 0 && best.e === N) return null;      /* 整条弧都在土内：没有出口，无效 */
+  /* 滑弧必须两端都真正穿出地面。只要有一端落在圆弧自身的端点上，
+     就说明该侧圆顶埋在土中、滑面没有出口，不是有效的滑裂面。 */
+  if (best.s === 0 || best.e === N) return null;
   const refine = (ka, kb) => {
     let a = xs[ka], b = xs[kb];
     for (let i=0;i<45;i++){
@@ -590,6 +798,13 @@ let RES = null;
 const $ = id => document.getElementById(id);
 const fmt = (v,d) => (isFinite(v) ? v.toFixed(d===undefined?3:d) : '—');
 
+/* 数字输入框回写（正在输入时不打扰用户） */
+function setNum(id, v){
+  const e = $(id);
+  if (!e || document.activeElement === e) return;
+  e.value = String(Math.round(v*100)/100);
+}
+
 /* ---------------------- 计算 ---------------------- */
 function compute(){
   const c = {xc:S.xc, yc:S.yc, R:S.R};
@@ -625,8 +840,17 @@ function drawMain(){
   ctx.clearRect(0,0,W,Hh);
 
   const HH = S.H, spanX = S.m*HH;
-  const xmin = -0.34*spanX - 0.1*HH, xmax = spanX + 0.52*spanX + 0.1*HH;
-  const ymin = -0.55*HH, ymax = 1.55*HH;
+  /* 视口 = 坡体 + 滑弧的并集，再留一点边距；圆心在坡趾左侧（x₀<0）时也能完整显示 */
+  let xmin = -0.34*spanX - 0.10*HH;
+  let xmax = spanX + 0.46*spanX;
+  let ymin = -0.28*HH;
+  let ymax = HH*1.14;
+  if (GEO){
+    xmin = Math.min(xmin, GEO.span.x1 - 0.05*HH);
+    xmax = Math.max(xmax, GEO.span.x2 + 0.05*HH);
+    ymin = Math.min(ymin, Math.max(GEO.c.yc - GEO.c.R, -1.5*HH) - 0.02*HH);
+    ymax = Math.max(ymax, Math.min(GEO.c.yc + 0.10*HH, HH*1.55));
+  }
   const sc = Math.min(W/(xmax-xmin), Hh/(ymax-ymin));
   const ox = (W - (xmax-xmin)*sc)/2 - xmin*sc;
   const oy = (Hh - (ymax-ymin)*sc)/2 + ymax*sc;
@@ -730,8 +954,9 @@ function drawMain(){
     ctx.strokeStyle = 'rgba(200,30,20,.5)'; ctx.lineWidth = 1.2; ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = '#8f1d18'; ctx.font = '11.5px "Microsoft YaHei",sans-serif';
-    ctx.fillText('O (x₀, y₀)', cxs+8, cys-8);
-    ctx.fillText('R = ' + c.R.toFixed(2) + ' m', (cxs+X(span.x1))/2+6, (cys+Y(arcY(span.x1,c)))/2);
+    ctx.fillText('O (x₀, y₀)', cxs+9, cys-9);
+    const rx = cxs + (X(span.x1)-cxs)*0.58, ry = cys + (Y(arcY(span.x1,c))-cys)*0.58;
+    ctx.fillText('R = ' + c.R.toFixed(2) + ' m', rx+7, ry+4);
   }
 
   /* 力箭头：N 沿内法向指向圆心、T 沿条底抵抗下滑、W 竖直向下作用于重心 */
@@ -776,9 +1001,10 @@ function drawMain(){
 
   /* 标注 */
   ctx.fillStyle = '#5c6b7d'; ctx.font = '12px "Microsoft YaHei",sans-serif';
-  ctx.fillText('H = ' + S.H + ' m', X(-0.30*spanX)-6, Y(HH/2));
+  const xH = Math.max(xmin + 0.02*spanX, -0.20*spanX);
+  ctx.fillText('H = ' + S.H + ' m', X(xH)-8, Y(HH/2));
   ctx.strokeStyle = '#98a2b3'; ctx.setLineDash([4,4]);
-  ctx.beginPath(); ctx.moveTo(X(xmin+0.02*spanX), Y(0)); ctx.lineTo(X(xmin+0.02*spanX), Y(HH)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(X(xH), Y(0)); ctx.lineTo(X(xH), Y(HH)); ctx.stroke();
   ctx.setLineDash([]);
   const beta = Math.atan(1/S.m)*RAD;
   ctx.fillText('β ≈ ' + beta.toFixed(0) + '°（1:' + S.m.toFixed(1) + '）', X(spanX*0.52), Y(HH*0.60));
@@ -870,9 +1096,9 @@ function refresh(){
   $('vP').textContent = S.phi.toFixed(0) + '°';
   $('vR').textContent = S.ru.toFixed(2);
   $('vN').textContent = S.n;
-  $('vX').textContent = S.xc.toFixed(1);
-  $('vY').textContent = S.yc.toFixed(1);
-  $('vRad').textContent = S.R.toFixed(1);
+  setNum('nX', S.xc);
+  setNum('nY', S.yc);
+  setNum('nRad', S.R);
 
   drawMain();
 
@@ -901,9 +1127,13 @@ function refresh(){
 
   /* 结果说明 */
   const d = (RES.bi.F - RES.sw.F);
-  $('resNote').innerHTML = phiZero
+  const nHint = (S.n < 12)
+    ? '<br><span style="color:#b45309">提示：瑞典法对分条数较敏感，n=' + S.n +
+      ' 时可能偏低 3%–5%。与教材算例对照时，建议 n 取 10–15，并直接在右侧输入教材给出的圆心与半径。</span>'
+    : '';
+  $('resNote').innerHTML = (phiZero
     ? '当前 φ=0：三种方法的 <b>F<sub>s</sub> 完全相同</b>（' + fmt(RES.sw.F) + '），这是检验程序正确性的一个好办法。'
-    : 'Bishop 比瑞典法大 <b>' + (isFinite(d)?d.toFixed(3):'—') + '</b>（' + (isFinite(d)&&RES.sw.F>0 ? (100*d/RES.sw.F).toFixed(1) : '—') + '%），差别来自条间力的处理方式。';
+    : 'Bishop 比瑞典法大 <b>' + (isFinite(d)?d.toFixed(3):'—') + '</b>（' + (isFinite(d)&&RES.sw.F>0 ? (100*d/RES.sw.F).toFixed(1) : '—') + '%），差别来自条间力的处理方式。') + nHint;
 
   /* 土条表 */
   const tb = $('tbl').querySelector('tbody');
@@ -993,6 +1223,9 @@ function init(){
   bindRange('sX','xc');
   bindRange('sY','yc');
   bindRange('sRad','R');
+  bindNum('nX','xc','sX');
+  bindNum('nY','yc','sY');
+  bindNum('nRad','R','sRad');
 
   const n2 = $('sN2');
   n2.addEventListener('input', ()=>{
@@ -1060,16 +1293,41 @@ function init(){
     syncCircle(); refresh();
   }, {passive:false});
 
-  /* 深链接：#v1/#v2/#v3 */
+  /* 深链接：#v1/#v2/#v3/#v4 */
   const h = (window.location && window.location.hash) ? window.location.hash.replace('#','') : '';
-  activate(h==='v2'||h==='v3' ? h : 'v1');
+  activate(['v2','v3','v4'].indexOf(h) >= 0 ? h : 'v1');
+  /* 锚点会让浏览器把页眉滚出视野，这里拉回顶部，保证标签页始终可见 */
+  if (h && window.scrollTo) setTimeout(()=>{ window.scrollTo(0,0); }, 0);
 
   setSliders(); syncCircle(); refresh(); refreshCount();
 }
 
 function syncCircle(){
-  if ($('sX')) { $('sX').value = S.xc; $('sY').value = S.yc; $('sRad').value = S.R; }
-  if ($('sX')) { $('sX').max = Math.max(45, Math.round(S.m*S.H*2)); $('sY').max = Math.max(40, Math.round(S.H*3)); $('sRad').max = Math.max(50, Math.round(S.H*5)); }
+  const setV = (id, v) => { const e = $(id); if (e && document.activeElement !== e) e.value = v; };
+  setV('sX', S.xc); setV('sY', S.yc); setV('sRad', S.R);
+  setNum('nX', S.xc); setNum('nY', S.yc); setNum('nRad', S.R);
+  if ($('sX')){
+    $('sX').min = -Math.max(8, Math.round(S.m*S.H*1.5));   /* 允许圆心落在坡趾左侧 */
+    $('sX').max = Math.max(45, Math.round(S.m*S.H*2));
+    $('sY').max = Math.max(40, Math.round(S.H*3));
+    $('sRad').max = Math.max(50, Math.round(S.H*5));
+  }
+}
+
+/* 数字输入框：可直接键入教材给出的精确圆心与半径 */
+function bindNum(id, key, sid){
+  const el = $(id);
+  if (!el) return;
+  const apply = ()=>{
+    const v = parseFloat(el.value);
+    if (!isFinite(v)) return;
+    if (key === 'R' && v <= 0) return;
+    S[key] = v;
+    if (sid) $(sid).value = v;
+    refresh();
+  };
+  el.addEventListener('change', apply);
+  el.addEventListener('input', apply);
 }
 
 function setSliders(){
@@ -1093,21 +1351,27 @@ function activate(id){
 /* 最危险滑弧：粗网格 + 局部细化（目标函数用 Bishop，稳定且与工程习惯接近） */
 function searchWorst(){
   const H = S.H, m = S.m;
-  const R0 = (0.9*S.yc + 1.0*H);
   let best = {F:Infinity};
+  /* 搜索时用较细的分条（≥18）评估，避免粗分条带来的系统性偏差；
+     同时排除"条底接近竖直"的退化滑弧——这类圆的弧端几乎垂直落地，
+     l = b/cosα 会失真，给出虚假的低值。 */
+  const SE = Object.assign({}, S, {n: Math.max(18, S.n)});
   const evalAt = (xc,yc,R)=>{
     const c0 = {xc:xc, yc:yc, R:R};
     const sp = findSpan(c0, H, m);
     if (!sp) return Infinity;
-    const sl = buildSlices(c0, sp, S);
+    const sl = buildSlices(c0, sp, SE);
     if (sl.length < 3) return Infinity;
-    const d = fsBishop(sl, S).F;
+    let maxA = 0;
+    for (const s of sl) maxA = Math.max(maxA, Math.abs(s.alpha));
+    if (maxA > 68*Math.PI/180) return Infinity;
+    const d = fsBishop(sl, SE).F;
     return isFinite(d) ? d : Infinity;
   };
   for (let i=0;i<10;i++){
-    const xc = (-0.1 + 1.35*i/9)*m*H;
+    const xc = (-0.35 + 1.65*i/9)*m*H;          /* 含坡趾左侧（x₀<0）的圆心 */
     for (let j=0;j<8;j++){
-      const yc = (0.85 + 0.75*j/7)*H;
+      const yc = (0.70 + 1.00*j/7)*H;
       for (let k=0;k<8;k++){
         const R = (0.65 + 0.62*k/7)*Math.hypot(xc, yc) + 0.15*H;
         const F = evalAt(xc,yc,R);

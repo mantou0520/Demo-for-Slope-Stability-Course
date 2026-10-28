@@ -134,5 +134,86 @@ console.log('\n[11] 无效圆弧应被识别');
   T('返回 null', findSpan(bad, base.H, base.m) === null);
 }
 
+console.log('\n[12] 推导链自洽：在算出的 F 上，平衡残差应为零');
+{
+  const t  = Math.tan(base.phi*Math.PI/180);
+  const sp = findSpan(c0, base.H, base.m);
+  const ss = buildSlices(c0, sp, base);
+
+  /* ---- Bishop：对圆心的力矩残差 ΣT − ΣW·sinα ---- */
+  const Fb = fsBishop(ss, base).F;
+  let momT = 0, momW = 0;
+  for (const s of ss){
+    const ma = s.cosA + s.sinA*t/Fb;
+    momT += (base.c*s.b + (s.W - base.ru*base.gamma*s.h*s.b)*t)/ma/Fb;
+    momW += s.W*s.sinA;
+  }
+  T('Bishop：力矩平衡 ΣT = ΣW·sinα',
+    Math.abs(momT-momW)/momW < 1e-6,
+    `残差 ${((momT-momW)/momW*100).toExponential(2)} %`);
+
+  /* ---- Janbu：水平力残差 Σ(T·cosα − N·sinα) ---- */
+  const Fj = fsJanbu(ss, base).F;
+  let hx = 0, sumWtan = 0;
+  for (const s of ss){
+    const ma = s.cosA + s.sinA*t/Fj;
+    const Np = (s.W - base.ru*base.gamma*s.h*s.b - base.c*s.l*s.sinA/Fj)/ma;
+    const Ti = (base.c*s.l + Np*t)/Fj;
+    const Ni = Np + base.ru*base.gamma*s.h*s.l;      /* 总法向力 = 有效法向力 + 孔压合力 */
+    hx += Ti*s.cosA - Ni*s.sinA;
+    sumWtan += s.W*Math.tan(s.alpha);
+  }
+  T('Janbu：水平力平衡 Σ(T·cosα − N·sinα) = 0',
+    Math.abs(hx)/Math.abs(sumWtan) < 1e-6,
+    `残差 ${(hx/sumWtan*100).toExponential(2)} %`);
+
+  /* ---- 瑞典法：N′ 由条底法向投影直接得出，再验整体力矩 ---- */
+  const Fsw = fsSwedish(ss, base).F;
+  let momS = 0, momWS = 0;
+  for (const s of ss){
+    const Np = s.W*s.cosA - base.ru*base.gamma*s.h*s.l;      /* 径向投影，不含 F */
+    momS += (base.c*s.l + Np*t)/Fsw;
+    momWS += s.W*s.sinA;
+  }
+  T('瑞典：按文档公式 N′=Wcosα−ul 重构，与实现的 ΣT/ΣWsinα 同式',
+    Math.abs(momS-momWS)/momWS < 1e-9,
+    `残差 ${((momS-momWS)/momWS*100).toExponential(2)} %（该式即 F 的定义，故恒为 0，用于核对实现与文档一致）`);
+
+  /* ---- 关键代数恒等式 ---- */
+  let id1 = true, id2 = true;
+  for (const s of ss){
+    const ma = s.cosA + s.sinA*t/1.5;
+    /* c'l·m_α − c'l·sinα·tanφ/F = c'b */
+    if (Math.abs(base.c*s.l*ma - base.c*s.l*s.sinA*t/1.5 - base.c*s.b) > 1e-9) id1 = false;
+    /* n_α = cosα·m_α */
+    const na = s.cosA*s.cosA*(1 + Math.tan(s.alpha)*t/1.5);
+    if (Math.abs(na - s.cosA*ma) > 1e-12) id2 = false;
+  }
+  T('代数恒等 1：c′l·m_α − c′l·sinα·tanφ/F = c′b', id1);
+  T('代数恒等 2：n_α = cosα · m_α', id2);
+
+  /* cosα + sinα·tanα = 1/cosα */
+  T('代数恒等 3：cosα + sinα·tanα = 1/cosα',
+    ss.every(s => Math.abs(s.cosA + s.sinA*Math.tan(s.alpha) - 1/s.cosA) < 1e-12));
+}
+
+console.log('\n[13] 教材算例回归：H=8 m、坡角 55°、γ=20、φ=12°、c=20 kPa');
+{
+  const S = {H:8, m:1/Math.tan(55*Math.PI/180), gamma:20, c:20, phi:12, ru:0, n:10};
+  /* 顶点埋在土中的圆（弧的一端未穿出地面）必须判为无效 */
+  T('弧端未穿出地面的圆应返回 null', findSpan({xc:0.5, yc:6.5, R:6.5}, S.H, S.m) === null);
+
+  const c = {xc:-0.4, yc:8.0, R:8.01};
+  const sp = findSpan(c, S.H, S.m);
+  T('圆心在坡趾左侧（x₀=-0.4）仍是有效滑弧', !!sp,
+    sp ? `滑弧 ${sp.x1.toFixed(2)} ~ ${sp.x2.toFixed(2)}` : 'null');
+  if (sp){
+    const sl = buildSlices(c, sp, S);
+    const sw = fsSwedish(sl, S).F, bi = fsBishop(sl, S).F;
+    T('瑞典法 ≈ 教材 1.045（±0.02）', Math.abs(sw-1.045) < 0.02, sw.toFixed(4));
+    T('同一圆 Bishop 不小于瑞典法', bi >= sw, `${bi.toFixed(4)} vs ${sw.toFixed(4)}`);
+  }
+}
+
 console.log(`\n===== 结果：${pass} 通过，${fail} 失败 =====\n`);
 process.exit(fail ? 1 : 0);

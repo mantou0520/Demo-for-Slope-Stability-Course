@@ -64,7 +64,7 @@ function makeEl(id, tag){
 }
 
 const els = {};
-const TAB_DEFS = ['v1','v2','v3'];
+const TAB_DEFS = ['v1','v2','v3','v4'];
 const tabs = TAB_DEFS.map(v => { const e = makeEl('tab_'+v,'div'); e.dataset.v = v; e.classList._s = new Set(['tab']); return e; });
 const views = TAB_DEFS.map(v => { const e = makeEl('view_'+v,'section'); e.id = v; return e; });
 const mmBtns = ['general','swedish','bishop'].map(mm => { const e = makeEl('mm_'+mm,'button'); e.dataset.mm = mm; return e; });
@@ -114,7 +114,7 @@ try {
   /* 标签页切换 */
   console.log('\n[2] 标签页');
   for (const t of tabs) { click(t); flush(); }
-  console.log('  三个标签页切换完成，无异常');
+  console.log('  四个标签页切换完成，无异常');
 
   /* 三种方法（第 2 页） */
   console.log('\n[3] 未知量计数：三种方法');
@@ -133,7 +133,7 @@ try {
     click(n2, 'input');
     flush();
   }
-  console.log('  完成，末值：未知量 ' + els.unkTotal.textContent + '（n=40，瑞典法应为 81）');
+  console.log('  完成，末值：' + els.unkTotal.textContent + '（n=40 且当前为简化 Bishop，4n−1 应为 159）');
 
   /* 第 1 页各类滑块 */
   console.log('\n[5] 第 1 页参数与滑弧滑块');
